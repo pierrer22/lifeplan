@@ -757,6 +757,7 @@ export interface RentVsBuySummary {
   finalOffsetBalance: number;
   totalOffsetInterestSaved: number;
   offsetTaxFreeEquivalentRatePct: number;
+  offsetTaxFreeEquivalentEtfRatePct: number;
   costBreakdown: RentVsBuyCostItem[];
   yearlySeries: RentVsBuyYearPoint[];
   insights: string[];
@@ -806,6 +807,7 @@ export interface MortgageOffsetSummary {
   yearOneHisaAfterTaxInterest: number;
   yearOneNetAdvantageVsHisa: number;
   taxFreeEquivalentHisaRatePct: number;
+  taxFreeEquivalentEtfRatePct: number;
   breakEvenOffsetBalanceForFee: number;
   finalOffsetCashBalance: number;
   yearlySeries: MortgageOffsetYearPoint[];

@@ -103,6 +103,15 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   const offsetTaxFreeEquivalentRatePct = round2(
     input.mortgageRatePct / (1 - marginalTaxDec),
   );
+  const mortgageRateDec = Math.max(0, input.mortgageRatePct) / 100;
+  const dividendYieldForEquiv = 0.03;
+  const maxYieldNetForEquiv = dividendYieldForEquiv * (1 - marginalTaxDec);
+  const offsetEtfEquivDec =
+    mortgageRateDec <= maxYieldNetForEquiv
+      ? mortgageRateDec / (1 - marginalTaxDec)
+      : (mortgageRateDec + dividendYieldForEquiv * 0.5 * marginalTaxDec) /
+        (1 - 0.5 * marginalTaxDec);
+  const offsetTaxFreeEquivalentEtfRatePct = round2(offsetEtfEquivDec * 100);
 
   const inflationDec = Math.max(0, input.inflationRatePct / 100);
   const rentGrowthDec = Math.max(0, input.annualRentIncreasePct / 100);
@@ -457,7 +466,7 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
 
   if (hasOffsetActivity) {
     insights.push(
-      `Mortgage offset savings ($${offsetInit.toLocaleString('en-AU')} start + $${Math.round(offsetMonthly).toLocaleString('en-AU')}/mo) cut mortgage interest by $${totalOffsetInterestSaved.toLocaleString('en-AU')} (${offsetTaxFreeEquivalentRatePct.toFixed(2)}% tax-free HISA equivalent; renter given identical extra savings for fairness).`,
+      `Mortgage offset savings ($${offsetInit.toLocaleString('en-AU')} start + $${Math.round(offsetMonthly).toLocaleString('en-AU')}/mo) cut mortgage interest by $${totalOffsetInterestSaved.toLocaleString('en-AU')} and are 100% tax-free (zero income tax, CGT, or HECS/MLS impact), equal to ${offsetTaxFreeEquivalentRatePct.toFixed(2)}% in a taxed HISA or ~${offsetTaxFreeEquivalentEtfRatePct.toFixed(2)}% pre-tax in ETFs/shares (renter given identical extra savings for fairness).`,
     );
   }
 
@@ -508,6 +517,7 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
     finalOffsetBalance: Math.round(buyerOffsetBalance),
     totalOffsetInterestSaved,
     offsetTaxFreeEquivalentRatePct,
+    offsetTaxFreeEquivalentEtfRatePct,
     costBreakdown,
     yearlySeries,
     insights,

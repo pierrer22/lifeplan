@@ -183,7 +183,7 @@ export const MortgageOffsetPanel: React.FC<MortgageOffsetPanelProps> = ({
                 {formatPercent(offsetSummary.taxFreeEquivalentHisaRatePct, 2)}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                Pre-tax HISA needed to tie
+                HISA (or ~{formatPercent(offsetSummary.taxFreeEquivalentEtfRatePct, 2)} ETFs) to tie
               </div>
             </div>
 
@@ -287,11 +287,36 @@ export const MortgageOffsetPanel: React.FC<MortgageOffsetPanelProps> = ({
             </ResponsiveContainer>
           </div>
 
-          {contextNote ? (
-            <div className="mt-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 p-3 text-xs leading-relaxed text-blue-900 dark:text-blue-200">
-              {contextNote}
+          <div className="mt-3 space-y-2">
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-xs leading-relaxed text-emerald-900 dark:text-emerald-200">
+              <strong>100% Tax-Free Advantage:</strong> Interest saved via an
+              offset account is <strong>not assessable income</strong> — zero
+              income tax, zero Medicare levy, zero CGT, and no increase to
+              HECS/MLS Repayment Income. At your{' '}
+              <strong>
+                {formatPercent(marginalTaxRateWithMedicarePct, 0)}
+              </strong>{' '}
+              marginal rate, saving{' '}
+              <strong>{formatPercent(annualRatePct, 2)}</strong> in offset
+              equals{' '}
+              <strong>
+                {formatPercent(offsetSummary.taxFreeEquivalentHisaRatePct, 2)}{' '}
+                p.a.
+              </strong>{' '}
+              in a taxed HISA or{' '}
+              <strong>
+                ~{formatPercent(offsetSummary.taxFreeEquivalentEtfRatePct, 2)}{' '}
+                p.a.
+              </strong>{' '}
+              pre-tax in ETFs/shares (3% yield + 50% CGT discount).
             </div>
-          ) : null}
+
+            {contextNote ? (
+              <div className="rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 p-3 text-xs leading-relaxed text-blue-900 dark:text-blue-200">
+                {contextNote}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </SectionCard>

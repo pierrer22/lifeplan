@@ -44,6 +44,15 @@ export function calculateMortgageOffset(
     marginalTaxDec < 0.99
       ? round2(annualRatePct / (1 - marginalTaxDec))
       : annualRatePct;
+  const annualRateDec = annualRatePct / 100;
+  const dividendYield = 0.03;
+  const maxYieldNet = dividendYield * (1 - marginalTaxDec);
+  const etfEquivDec =
+    annualRateDec <= maxYieldNet
+      ? annualRateDec / (1 - marginalTaxDec)
+      : (annualRateDec + dividendYield * 0.5 * marginalTaxDec) /
+        (1 - 0.5 * marginalTaxDec);
+  const taxFreeEquivalentEtfRatePct = round2(etfEquivDec * 100);
   const breakEvenOffsetBalanceForFee =
     annualOffsetFee > 0 && annualRatePct > 0
       ? Math.round(annualOffsetFee / (annualRatePct / 100))
@@ -70,6 +79,7 @@ export function calculateMortgageOffset(
       yearOneHisaAfterTaxInterest: 0,
       yearOneNetAdvantageVsHisa: 0,
       taxFreeEquivalentHisaRatePct,
+      taxFreeEquivalentEtfRatePct,
       breakEvenOffsetBalanceForFee,
       finalOffsetCashBalance: Math.round(initialOffsetBalance),
       yearlySeries: [
@@ -233,6 +243,7 @@ export function calculateMortgageOffset(
     yearOneHisaAfterTaxInterest: Math.round(yearOneHisaAfterTaxInterest),
     yearOneNetAdvantageVsHisa,
     taxFreeEquivalentHisaRatePct,
+    taxFreeEquivalentEtfRatePct,
     breakEvenOffsetBalanceForFee,
     finalOffsetCashBalance: Math.round(offsetCash),
     yearlySeries,

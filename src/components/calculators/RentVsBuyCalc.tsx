@@ -616,6 +616,9 @@ export const RentVsBuyCalc: React.FC = () => {
                   <div className="mt-0.5 text-lg font-bold text-slate-900 dark:text-slate-100">
                     {formatPercent(summary.offsetTaxFreeEquivalentRatePct, 2)}
                   </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    vs HISA · ~{formatPercent(summary.offsetTaxFreeEquivalentEtfRatePct, 2)} pre-tax ETFs
+                  </div>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
                   <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -625,6 +628,13 @@ export const RentVsBuyCalc: React.FC = () => {
                     {formatAUD(summary.finalOffsetBalance)}
                   </div>
                 </div>
+              </div>
+              <div className="mt-3 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/30 p-2.5 text-xs leading-relaxed text-emerald-900 dark:text-emerald-200">
+                <strong>Tax-Free Offset vs Taxed HISA / Investing:</strong>{' '}
+                Offset interest savings incur $0 income tax, $0 CGT, and $0
+                HECS/MLS Repayment Income impact, whereas HISA interest is taxed
+                annually at your marginal rate and the renter&apos;s ETF
+                portfolio incurs annual dividend tax + 50% discount CGT on sale.
               </div>
             </SectionCard>
           ) : null}

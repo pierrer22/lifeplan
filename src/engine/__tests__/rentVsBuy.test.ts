@@ -126,6 +126,7 @@ describe('calculateRentVsBuy', () => {
     expect(withOffset.totalOffsetInterestSaved).toBeGreaterThan(30000);
     expect(withOffset.finalOffsetBalance).toBe(50000 + 400 * 12 * 15);
     expect(withOffset.offsetTaxFreeEquivalentRatePct).toBeCloseTo(8.82, 2);
+    expect(withOffset.offsetTaxFreeEquivalentEtfRatePct).toBeCloseTo(7.71, 2);
   });
 
   it('preserves Year-0 apples-to-apples starting wealth parity when initial offset cash is provided', () => {

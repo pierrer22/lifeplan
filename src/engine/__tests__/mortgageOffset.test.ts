@@ -17,8 +17,9 @@ describe('calculateMortgageOffset', () => {
     expect(res.monthsSavedPayoff).toBe(0);
     expect(res.offsetTotalInterest).toBe(res.baselineTotalInterest);
     expect(res.monthsToFullOffset).toBeNull();
-    // 6.0 / (1 - 0.32) = 8.82% pre-tax HISA equivalent
+    // 6.0 / (1 - 0.32) = 8.82% pre-tax HISA equivalent; (0.06 + 0.03*0.16)/0.84 = 7.71% pre-tax ETF equivalent
     expect(res.taxFreeEquivalentHisaRatePct).toBeCloseTo(8.82, 2);
+    expect(res.taxFreeEquivalentEtfRatePct).toBeCloseTo(7.71, 2);
   });
 
   it('saves substantial interest, shortens payoff term, and beats after-tax HISA with $25k + $500/mo offset', () => {

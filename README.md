@@ -87,7 +87,7 @@ lifeplan/
     │   ├── super.ts                 # Concessional cap, carry-forward, FHSSS
     │   ├── housing.ts               # Stamp duty, FHB, deposit strategies, rent optimizer
     │   ├── mortgageApproval.ts      # APRA +3% underwriting, HEM floor, DTI & card shading
-    │   ├── mortgageOffset.ts        # 100% offset interest saved, term reduction & HISA equiv
+    │   ├── mortgageOffset.ts        # 100% tax-free offset savings vs taxed HISA/ETFs
     │   ├── rentVsBuy.ts             # Rent vs mortgage comparison with offset & running costs
     │   ├── novatedLease.ts          # EV/ICE lease, GST cap, RFBA HECS/MLS knock-on
     │   ├── education.ts             # CSP vs Full-Fee ROI & Austudy modelling
