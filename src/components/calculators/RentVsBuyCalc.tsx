@@ -20,6 +20,7 @@ import {
   AlertBanner,
   Badge,
   CHART_STYLES,
+  ChartSwatchLegend,
   CurrencyInput,
   SectionCard,
   SliderField,
@@ -629,6 +630,18 @@ export const RentVsBuyCalc: React.FC = () => {
                       contentStyle={CHART_STYLES.tooltipContentStyle}
                       itemStyle={CHART_STYLES.tooltipItemStyle}
                       labelStyle={CHART_STYLES.tooltipLabelStyle}
+                    />
+                    <Legend
+                      content={() => (
+                        <ChartSwatchLegend
+                          items={summary.costBreakdown
+                            .filter((c) => c.amount > 0)
+                            .map((c) => ({
+                              label: c.label,
+                              color: c.color,
+                            }))}
+                        />
+                      )}
                     />
                     <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={18}>
                       {summary.costBreakdown.map((entry) => (

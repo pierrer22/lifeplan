@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -629,21 +630,18 @@ export const CareerStudyCalc: React.FC = () => {
                   <Tooltip
                     formatter={(value, name) => [
                       formatAUD(Number(value ?? 0)),
-                      name === 'selectedStudyCumulative'
-                        ? 'Selected Path'
-                        : name === 'noStudyCumulative'
-                          ? 'No Study Baseline'
-                          : 'Full-Fee Alternative',
+                      String(name),
                     ]}
                     labelFormatter={(yr) => `Year ${yr}`}
                     contentStyle={CHART_STYLES.tooltipContentStyle}
                     itemStyle={CHART_STYLES.tooltipItemStyle}
                     labelStyle={CHART_STYLES.tooltipLabelStyle}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Line
                     type="monotone"
                     dataKey="selectedStudyCumulative"
-                    name="selectedStudyCumulative"
+                    name="Selected Path"
                     stroke="#2563EB"
                     strokeWidth={2.5}
                     dot={false}
@@ -651,7 +649,7 @@ export const CareerStudyCalc: React.FC = () => {
                   <Line
                     type="monotone"
                     dataKey="noStudyCumulative"
-                    name="noStudyCumulative"
+                    name="No Study Baseline"
                     stroke="#059669"
                     strokeWidth={2}
                     dot={false}
@@ -659,7 +657,7 @@ export const CareerStudyCalc: React.FC = () => {
                   <Line
                     type="monotone"
                     dataKey="fullFeeAlternativeCumulative"
-                    name="fullFeeAlternativeCumulative"
+                    name="Full-Fee Alternative"
                     stroke="#D97706"
                     strokeDasharray="4 4"
                     strokeWidth={2}

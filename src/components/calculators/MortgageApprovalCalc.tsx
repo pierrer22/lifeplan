@@ -4,6 +4,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   ReferenceLine,
@@ -28,6 +29,7 @@ import {
   AlertBanner,
   Badge,
   CHART_STYLES,
+  ChartSwatchLegend,
   CurrencyInput,
   SectionCard,
   SliderField,
@@ -607,6 +609,16 @@ export const MortgageApprovalCalc: React.FC = () => {
                       itemStyle={CHART_STYLES.tooltipItemStyle}
                       labelStyle={CHART_STYLES.tooltipLabelStyle}
                     />
+                    <Legend
+                      content={() => (
+                        <ChartSwatchLegend
+                          items={summary.borrowingBreakdown.map((d) => ({
+                            label: d.name,
+                            color: d.color,
+                          }))}
+                        />
+                      )}
+                    />
                     <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={22}>
                       {summary.borrowingBreakdown.map((entry) => (
                         <Cell key={entry.name} fill={entry.color} />
@@ -638,17 +650,18 @@ export const MortgageApprovalCalc: React.FC = () => {
                     <Tooltip
                       formatter={(value, name) => [
                         `${formatAUD(Number(value ?? 0))}/mo`,
-                        name === 'monthlyRepayment' ? 'Monthly P&I' : 'Monthly Surplus',
+                        String(name),
                       ]}
                       contentStyle={CHART_STYLES.tooltipContentStyle}
                       itemStyle={CHART_STYLES.tooltipItemStyle}
                       labelStyle={CHART_STYLES.tooltipLabelStyle}
                     />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <ReferenceLine y={0} stroke="#E11D48" strokeDasharray="3 3" />
                     <Line
                       type="monotone"
                       dataKey="monthlyRepayment"
-                      name="monthlyRepayment"
+                      name="Monthly P&I"
                       stroke="#2563EB"
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
@@ -656,7 +669,7 @@ export const MortgageApprovalCalc: React.FC = () => {
                     <Line
                       type="monotone"
                       dataKey="monthlySurplus"
-                      name="monthlySurplus"
+                      name="Monthly Surplus"
                       stroke="#059669"
                       strokeWidth={2}
                       dot={{ r: 3 }}

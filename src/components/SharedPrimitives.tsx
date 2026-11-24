@@ -47,6 +47,22 @@ export const CHART_STYLES = {
   tooltipLabelStyle: { color: 'var(--chart-tooltip-text)', fontWeight: 600 },
 } as const;
 
+export const ChartSwatchLegend: React.FC<{
+  items: ReadonlyArray<{ label: string; color: string }>;
+}> = ({ items }) => (
+  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-2 text-[11px] text-slate-600 dark:text-slate-300">
+    {items.map((item) => (
+      <span key={item.label} className="inline-flex items-center gap-1.5">
+        <span
+          className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
+          style={{ backgroundColor: item.color }}
+        />
+        <span>{item.label}</span>
+      </span>
+    ))}
+  </div>
+);
+
 export type StatTone = 'neutral' | 'positive' | 'warning' | 'danger' | 'accent';
 
 const STAT_TONE_STYLES: Record<

@@ -4,6 +4,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,6 +18,7 @@ import {
   AlertBanner,
   Badge,
   CHART_STYLES,
+  ChartSwatchLegend,
   CurrencyInput,
   SectionCard,
   SliderField,
@@ -443,6 +445,16 @@ export const NovatedLeaseCalc: React.FC = () => {
                     contentStyle={CHART_STYLES.tooltipContentStyle}
                     itemStyle={CHART_STYLES.tooltipItemStyle}
                     labelStyle={CHART_STYLES.tooltipLabelStyle}
+                  />
+                  <Legend
+                    content={() => (
+                      <ChartSwatchLegend
+                        items={threeWayChartData.map((d) => ({
+                          label: d.method,
+                          color: d.fill,
+                        }))}
+                      />
+                    )}
                   />
                   <Bar
                     dataKey="totalCost"

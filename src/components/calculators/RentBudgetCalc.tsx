@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
   ComposedChart,
+  Legend,
   Line,
   ReferenceLine,
   ResponsiveContainer,
@@ -424,7 +425,7 @@ export const RentBudgetCalc: React.FC = () => {
                       if (value === null || value === undefined) {
                         return ['Unfeasible (>20 yrs)', 'Months to Deposit'];
                       }
-                      if (name === 'monthsToDeposit') {
+                      if (name === 'Months to Deposit') {
                         return [formatMonths(Number(value)), 'Months to Deposit'];
                       }
                       return [`${formatAUD(Number(value))}/mo`, 'Monthly Surplus'];
@@ -434,12 +435,13 @@ export const RentBudgetCalc: React.FC = () => {
                     itemStyle={CHART_STYLES.tooltipItemStyle}
                     labelStyle={CHART_STYLES.tooltipLabelStyle}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                   {hasFeasibleMonths ? (
                     <Line
                       yAxisId="left"
                       type="monotone"
                       dataKey="monthsToDeposit"
-                      name="monthsToDeposit"
+                      name="Months to Deposit"
                       stroke="#2563EB"
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
@@ -450,7 +452,7 @@ export const RentBudgetCalc: React.FC = () => {
                     yAxisId="right"
                     type="monotone"
                     dataKey="monthlySurplus"
-                    name="monthlySurplus"
+                    name="Monthly Surplus"
                     stroke="#059669"
                     strokeWidth={2}
                     strokeDasharray={hasFeasibleMonths ? '4 4' : undefined}

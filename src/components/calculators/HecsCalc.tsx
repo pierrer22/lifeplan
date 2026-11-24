@@ -3,6 +3,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -321,19 +322,18 @@ export const HecsCalc: React.FC = () => {
                   <Tooltip
                     formatter={(value, name) => [
                       formatAUD(Number(value ?? 0)),
-                      name === 'closingBalance'
-                        ? 'With Voluntary Extra'
-                        : 'Minimum Compulsory Only',
+                      String(name),
                     ]}
                     labelFormatter={(yr) => `Year ${yr}`}
                     contentStyle={CHART_STYLES.tooltipContentStyle}
                     itemStyle={CHART_STYLES.tooltipItemStyle}
                     labelStyle={CHART_STYLES.tooltipLabelStyle}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Area
                     type="monotone"
                     dataKey="baselineClosingBalance"
-                    name="baselineClosingBalance"
+                    name="Minimum Compulsory Only"
                     stroke="#64748B"
                     fill="#64748B"
                     fillOpacity={isDark ? 0.18 : 0.1}
@@ -342,7 +342,7 @@ export const HecsCalc: React.FC = () => {
                   <Area
                     type="monotone"
                     dataKey="closingBalance"
-                    name="closingBalance"
+                    name="With Voluntary Extra"
                     stroke="#059669"
                     fill="#059669"
                     fillOpacity={isDark ? 0.24 : 0.16}

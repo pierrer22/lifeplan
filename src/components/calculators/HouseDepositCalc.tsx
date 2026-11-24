@@ -3,6 +3,7 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
+  Legend,
   Line,
   ReferenceLine,
   ResponsiveContainer,
@@ -519,19 +520,18 @@ export const HouseDepositCalc: React.FC = () => {
                   <Tooltip
                     formatter={(value, name) => [
                       formatAUD(Number(value ?? 0)),
-                      name === 'projectedSavings'
-                        ? 'Projected Deposit Savings'
-                        : 'Upfront Cash Target',
+                      String(name),
                     ]}
                     labelFormatter={(label) => `Year ${label}`}
                     contentStyle={CHART_STYLES.tooltipContentStyle}
                     itemStyle={CHART_STYLES.tooltipItemStyle}
                     labelStyle={CHART_STYLES.tooltipLabelStyle}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Area
                     type="monotone"
                     dataKey="projectedSavings"
-                    name="projectedSavings"
+                    name="Projected Deposit Savings"
                     stroke="#2563EB"
                     fill="#2563EB"
                     fillOpacity={isDark ? 0.22 : 0.14}
@@ -540,7 +540,7 @@ export const HouseDepositCalc: React.FC = () => {
                   <Line
                     type="monotone"
                     dataKey="targetUpfrontRequired"
-                    name="targetUpfrontRequired"
+                    name="Upfront Cash Target"
                     stroke="#059669"
                     strokeDasharray="5 5"
                     strokeWidth={2}

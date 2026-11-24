@@ -18,6 +18,7 @@ import {
   AlertBanner,
   Badge,
   CHART_STYLES,
+  ChartSwatchLegend,
   SectionCard,
   StatCard,
   formatAUD,
@@ -354,6 +355,16 @@ export const OverviewDashboard: React.FC = () => {
                   contentStyle={CHART_STYLES.tooltipContentStyle}
                   itemStyle={CHART_STYLES.tooltipItemStyle}
                   labelStyle={CHART_STYLES.tooltipLabelStyle}
+                />
+                <Legend
+                  content={() => (
+                    <ChartSwatchLegend
+                      items={monthlyCashflowData.map((d) => ({
+                        label: d.name,
+                        color: d.color,
+                      }))}
+                    />
+                  )}
                 />
                 <Bar dataKey="amount" radius={[0, 6, 6, 0]} barSize={22}>
                   {monthlyCashflowData.map((entry) => (

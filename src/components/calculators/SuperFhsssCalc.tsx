@@ -6,6 +6,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,6 +20,7 @@ import {
   AlertBanner,
   Badge,
   CHART_STYLES,
+  ChartSwatchLegend,
   CurrencyInput,
   SectionCard,
   SliderField,
@@ -472,6 +474,16 @@ export const SuperFhsssCalc: React.FC = () => {
                       itemStyle={CHART_STYLES.tooltipItemStyle}
                       labelStyle={CHART_STYLES.tooltipLabelStyle}
                     />
+                    <Legend
+                      content={() => (
+                        <ChartSwatchLegend
+                          items={fhsssComparisonData.map((d) => ({
+                            label: d.name,
+                            color: d.fill,
+                          }))}
+                        />
+                      )}
+                    />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={72}>
                       {fhsssComparisonData.map((entry) => (
                         <Cell key={entry.name} fill={entry.fill} />
@@ -528,19 +540,18 @@ export const SuperFhsssCalc: React.FC = () => {
                     <Tooltip
                       formatter={(value, name) => [
                         formatAUD(Number(value ?? 0)),
-                        name === 'balanceWithSacrifice'
-                          ? 'With Sacrifice'
-                          : 'Baseline SG Only',
+                        String(name),
                       ]}
                       labelFormatter={(age) => `Age ${age}`}
                       contentStyle={CHART_STYLES.tooltipContentStyle}
                       itemStyle={CHART_STYLES.tooltipItemStyle}
                       labelStyle={CHART_STYLES.tooltipLabelStyle}
                     />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Area
                       type="monotone"
                       dataKey="balanceWithSacrifice"
-                      name="balanceWithSacrifice"
+                      name="With Salary Sacrifice"
                       stroke="#2563EB"
                       fill="#2563EB"
                       fillOpacity={isDark ? 0.22 : 0.14}
@@ -549,7 +560,7 @@ export const SuperFhsssCalc: React.FC = () => {
                     <Area
                       type="monotone"
                       dataKey="balanceBaseline"
-                      name="balanceBaseline"
+                      name="Baseline SG Only"
                       stroke="#64748B"
                       fill="#64748B"
                       fillOpacity={isDark ? 0.16 : 0.1}
