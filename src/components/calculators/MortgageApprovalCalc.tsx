@@ -38,6 +38,7 @@ import {
   formatPercent,
 } from '../SharedPrimitives';
 import { MortgageOffsetPanel } from './MortgageOffsetPanel';
+import { ForwardScenariosPanel } from './ForwardScenariosPanel';
 
 const LOAN_TERMS = [15, 20, 25, 30] as const;
 
@@ -693,6 +694,22 @@ export const MortgageApprovalCalc: React.FC = () => {
               Math.min(50000, profile.currentCashSavings),
             )}
             contextNote="Australian banks do NOT count offset cash toward APRA borrowing power or LVR/LMI reduction at application because offset funds can be withdrawn anytime. Prioritise reaching 80% LVR (or 5% HGS) first, then keep surplus savings in a 100% offset account."
+          />
+
+          <ForwardScenariosPanel
+            propertyPrice={propertyPrice}
+            depositAmountNow={depositAmount}
+            annualSavingsCapacity={lifePlan.rentBudget.annualSavingsCapacity}
+            interestRatePct={interestRatePct}
+            apraBufferPct={apraBufferPct}
+            loanTermYears={loanTermYears}
+            creditCardLimitsTotal={creditCardLimitsTotal}
+            existingMonthlyDebtRepayments={existingMonthlyDebtRepayments}
+            monthlyLivingExpenses={monthlyLivingExpenses}
+            hecsBalanceOverride={hecsBalance}
+            creditScoreBand={creditScoreBand}
+            bonusOrOtherIncomeAnnual={bonusOrOtherIncomeAnnual}
+            novatedLeaseAnnualPreTax={novatedLeaseAnnualPreTax}
           />
 
           <AlertBanner

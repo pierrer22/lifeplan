@@ -28,6 +28,7 @@ import {
   formatPercent,
 } from '../SharedPrimitives';
 import { MortgageOffsetPanel } from './MortgageOffsetPanel';
+import { ForwardScenariosPanel } from './ForwardScenariosPanel';
 
 const AU_STATES: readonly AuState[] = [
   'NSW',
@@ -642,6 +643,21 @@ export const HouseDepositCalc: React.FC = () => {
               Math.min(50000, profile.currentCashSavings),
             )}
             contextNote="Keep your emergency fund in a 100% offset account rather than paying extra straight into the loan or a taxed HISA: cash remains withdrawable at call while saving mortgage interest tax-free."
+          />
+
+          <ForwardScenariosPanel
+            propertyPrice={propertyPrice}
+            depositAmountNow={
+              profile.currentCashSavings + profile.currentInvestments
+            }
+            annualSavingsCapacity={lifePlan.rentBudget.annualSavingsCapacity}
+            interestRatePct={mortgageRatePct}
+            loanTermYears={30}
+            novatedLeaseAnnualPreTax={
+              profile.novatedLease.enabled
+                ? lifePlan.novatedLease.preTaxDeductionAnnual
+                : 0
+            }
           />
 
           {summary.notes.length > 0 ? (

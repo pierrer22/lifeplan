@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { usePlanner } from '../context/PlannerContext';
 import { ActionRoadmapView } from './ActionRoadmapView';
+import { ForwardScenariosPanel } from './calculators/ForwardScenariosPanel';
 import {
   AlertBanner,
   Badge,
@@ -458,6 +459,18 @@ export const OverviewDashboard: React.FC = () => {
           </div>
         </SectionCard>
       </div>
+
+      {/* Forward-Looking 1-Year Block Scenarios */}
+      <ForwardScenariosPanel
+        propertyPrice={profile.targetPropertyPrice}
+        depositAmountNow={profile.currentCashSavings + profile.currentInvestments}
+        annualSavingsCapacity={rentBudget.annualSavingsCapacity}
+        interestRatePct={profile.targetMortgageRatePct}
+        loanTermYears={30}
+        novatedLeaseAnnualPreTax={
+          novatedLease.enabled ? novatedLease.preTaxDeductionAnnual : 0
+        }
+      />
 
       {/* Embedded Action Roadmap */}
       <ActionRoadmapView />

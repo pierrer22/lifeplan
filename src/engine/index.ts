@@ -17,6 +17,7 @@ export {
   calculateRentBudgetPlan,
 } from './housing';
 export { evaluateMortgageApproval } from './mortgageApproval';
+export { calculateForwardScenarios } from './forwardScenarios';
 export { calculateMortgageOffset } from './mortgageOffset';
 export { calculateRentVsBuy } from './rentVsBuy';
 export { calculateNovatedLease } from './novatedLease';

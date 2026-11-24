@@ -812,3 +812,57 @@ export interface MortgageOffsetSummary {
   finalOffsetCashBalance: number;
   yearlySeries: MortgageOffsetYearPoint[];
 }
+
+// ============================================================================
+// Forward-Looking 1-Year Block Scenario Types
+// ============================================================================
+
+export interface ForwardScenarioInput {
+  profile: PlannerProfile;
+  horizonYears?: number;
+  includeMastersUplift?: boolean;
+  mastersCompletionYear?: number;
+  mastersUpliftPct?: number;
+  salaryGrowthPct?: number;
+  startingSalary?: number;
+  startingHecsBalance?: number;
+  voluntaryExtraHecsAnnual?: number;
+  propertyPrice?: number;
+  depositAmountNow?: number;
+  annualSavingsCapacity?: number;
+  interestRatePct?: number;
+  apraBufferPct?: number;
+  loanTermYears?: number;
+  creditCardLimitsTotal?: number;
+  existingMonthlyDebtRepayments?: number;
+  monthlyLivingExpenses?: number;
+  creditScoreBand?: CreditScoreBand;
+  bonusOrOtherIncomeAnnual?: number;
+  novatedLeaseAnnualPreTax?: number;
+}
+
+export interface ForwardScenarioYearBlock {
+  year: number;
+  calendarYear: number;
+  label: string;
+  grossSalary: number;
+  mastersAttained: boolean;
+  mastersJustCompleted: boolean;
+  hecsBalance: number;
+  hecsAnnualRepayment: number;
+  maxBorrowingPower: number;
+  borrowingDeltaVsNow: number;
+  approvalScore: number;
+  verdict: MortgageApprovalSummary['verdict'];
+  dtiRatio: number;
+  projectedLiquidDeposit: number;
+  maxPropertyBudget: number;
+}
+
+export interface ForwardScenarioSummary {
+  blocks: ForwardScenarioYearBlock[];
+  mastersCompletionYear: number;
+  mastersUpliftPct: number;
+  fiveYearBorrowingGain: number;
+  fiveYearHecsReduction: number;
+}

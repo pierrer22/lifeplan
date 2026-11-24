@@ -17,11 +17,11 @@ LifePlanner is an interactive React + TypeScript financial, housing, superannuat
 - **House Deposit & Required Income** (`HouseDepositCalc`):
   - Compares **5% HGS ($0 LMI)**, **10% + LMI**, and **20% ($0 LMI)** deposit strategies across all 8 Australian states and territories.
   - Models **2026 state stamp duty & First Home Buyer (FHB) concessions/grants** (including ACT HBCS $0 duty with no price cap from 1 July 2026, NSW FHBAS $0 up to $800k / tapered to $1M, VIC, QLD, WA, SA, TAS, NT) and regional/metro HGS price caps.
-  - Includes **APRA +3% serviceability buffer** borrowing power with HECS debt impact, a **Required Gross Income solver**, a deposit accumulation timeline incorporating FHSSS, and a **100% Mortgage Offset Account** benefit projection.
+  - Includes **APRA +3% serviceability buffer** borrowing power with HECS debt impact, a **Required Gross Income solver**, a deposit accumulation timeline incorporating FHSSS, a **100% Mortgage Offset Account** benefit projection, and **Forward-Looking 1-Year Block Scenarios** (salary raises + Masters uplift + HECS paydown).
 - **Mortgage Loan Approval** (`MortgageApprovalCalc`):
   - Models Australian bank underwriting across 4 gates: **APRA +3% serviceability buffer**, **LVR & HGS/LMI**, **Debt-to-Income (DTI)**, and **Employment & Credit Score**.
   - Applies **HEM living expense floors** (single/couple + dependents), **3.8%/month credit card limit shading**, 80% bonus shading, and exact borrowing power lost to HECS-HELP and credit cards.
-  - Includes an **Interest Rate Stress Test** (`-0.5%` to `+3.0%`), post-settlement **100% Mortgage Offset Account** impact analysis, and prioritized steps to strengthen loan approval.
+  - Includes an **Interest Rate Stress Test** (`-0.5%` to `+3.0%`), post-settlement **100% Mortgage Offset Account** impact analysis, **Forward-Looking 1-Year Block Scenarios** (projected salary, Masters graduation uplift & HECS reduction), and prioritized steps to strengthen loan approval.
 - **Rent vs Save Optimizer** (`RentBudgetCalc`):
   - Calculates monthly surplus, savings rate, and **30% housing stress** status against household net income.
   - Models a weekly rent sensitivity curve ($250–$950/wk), maximum sustainable rent to stay on schedule, and capital-city rent benchmarks (Sydney, Canberra, Melbourne, Brisbane, Perth, Adelaide).
@@ -87,6 +87,7 @@ lifeplan/
     │   ├── super.ts                 # Concessional cap, carry-forward, FHSSS
     │   ├── housing.ts               # Stamp duty, FHB, deposit strategies, rent optimizer
     │   ├── mortgageApproval.ts      # APRA +3% underwriting, HEM floor, DTI & card shading
+    │   ├── forwardScenarios.ts      # 1-year blocks: salary + Masters uplift + HECS paydown
     │   ├── mortgageOffset.ts        # 100% tax-free offset savings vs taxed HISA/ETFs
     │   ├── rentVsBuy.ts             # Rent vs mortgage comparison with offset & running costs
     │   ├── novatedLease.ts          # EV/ICE lease, GST cap, RFBA HECS/MLS knock-on
