@@ -17,6 +17,7 @@ import {
   HECS_DEFAULT_INDEXATION_PCT,
   HECS_THRESHOLDS,
   SSAF_2026,
+  STUDENT_STARTUP_LOAN_2026,
 } from '../../data/auConstants';
 import { simulateHecsPayoff } from '../../engine';
 import { usePlanner } from '../../context/PlannerContext';
@@ -35,7 +36,14 @@ import {
 
 function buildDefaultFutureStudy(profile: PlannerProfile): HecsFutureStudyInput {
   if (profile.hecsFutureStudy) {
-    return { ...profile.hecsFutureStudy };
+    return {
+      ...profile.hecsFutureStudy,
+      includeSsl: profile.hecsFutureStudy.includeSsl ?? true,
+      sslInstalments: profile.hecsFutureStudy.sslInstalments ?? 1,
+      sslAmountPerInstalment:
+        profile.hecsFutureStudy.sslAmountPerInstalment ??
+        STUDENT_STARTUP_LOAN_2026.perPeriod,
+    };
   }
   const unitsPerTerm = 1;
   const termsPerYear: 2 | 3 = 3;
@@ -56,6 +64,9 @@ function buildDefaultFutureStudy(profile: PlannerProfile): HecsFutureStudyInput 
     ssafAnnualAmount: isPartTimeLoad
       ? SSAF_2026.partTimeAnnual
       : SSAF_2026.fullTimeAnnual,
+    includeSsl: true,
+    sslInstalments: 1,
+    sslAmountPerInstalment: STUDENT_STARTUP_LOAN_2026.perPeriod,
   };
 }
 
@@ -71,7 +82,11 @@ function futureStudyEqual(
     a.unitsPerEftsl === b.unitsPerEftsl &&
     a.annualFeePerEftsl === b.annualFeePerEftsl &&
     a.includeSsaf === b.includeSsaf &&
-    a.ssafAnnualAmount === b.ssafAnnualAmount
+    a.ssafAnnualAmount === b.ssafAnnualAmount &&
+    Boolean(a.includeSsl) === Boolean(b.includeSsl) &&
+    (a.sslInstalments ?? 0) === (b.sslInstalments ?? 0) &&
+    (a.sslAmountPerInstalment ?? STUDENT_STARTUP_LOAN_2026.perPeriod) ===
+      (b.sslAmountPerInstalment ?? STUDENT_STARTUP_LOAN_2026.perPeriod)
   );
 }
 
@@ -482,15 +497,15 @@ export const HecsCalc: React.FC = () => {
                     </span>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       max={32}
                       step={1}
                       value={futureStudy.totalUnitsRemaining}
                       onChange={(e) =>
                         updateFutureStudy({
                           totalUnitsRemaining: Math.max(
-                            1,
-                            Math.min(32, Number(e.target.value) || 1),
+                            0,
+                            Math.min(32, Number(e.target.value) || 0),
                           ),
                         })
                       }
@@ -594,6 +609,65 @@ export const HecsCalc: React.FC = () => {
                   ) : null}
                 </div>
 
+                <div className="space-y-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
+                  <label className="flex cursor-pointer items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <span>Include Student Start-up Loan (SSL — Jan 2027)</span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(futureStudy.includeSsl)}
+                      onChange={(e) =>
+                        updateFutureStudy({ includeSsl: e.target.checked })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </label>
+                  {futureStudy.includeSsl ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <label className="block">
+                          <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                            SSL Lots (max 2/yr)
+                          </span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={6}
+                            step={1}
+                            value={futureStudy.sslInstalments ?? 1}
+                            onChange={(e) =>
+                              updateFutureStudy({
+                                sslInstalments: Math.max(
+                                  1,
+                                  Math.min(6, Number(e.target.value) || 1),
+                                ),
+                              })
+                            }
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums focus:border-blue-500 focus:outline-none"
+                          />
+                        </label>
+                        <CurrencyInput
+                          label="Amount / Lot"
+                          value={
+                            futureStudy.sslAmountPerInstalment ??
+                            STUDENT_STARTUP_LOAN_2026.perPeriod
+                          }
+                          onChange={(v) =>
+                            updateFutureStudy({ sslAmountPerInstalment: v })
+                          }
+                          min={0}
+                          max={3000}
+                          step={10}
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        0% real interest (indexed 1 June at lower of CPI/WPI);
+                        repaid after HECS-HELP. Requires full-time study &amp;
+                        ≥$1 Austudy.
+                      </p>
+                    </>
+                  ) : null}
+                </div>
+
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 text-xs text-amber-900 dark:text-amber-200 tabular-nums">
                   <div className="font-semibold">
                     {unitsPerYearPreview} units/yr ({eftslPerYearPreview.toFixed(2)}{' '}
@@ -601,8 +675,11 @@ export const HecsCalc: React.FC = () => {
                   </div>
                   <div className="mt-0.5 text-[11px] opacity-90">
                     {formatAUD(perUnitFeePreview)}/unit · +
-                    {formatAUD(annualStudyCostPreview)}/yr · +
-                    {formatAUD(summary.totalNewStudyDebtAdded)} total added
+                    {formatAUD(annualStudyCostPreview)}/yr study · +
+                    {formatAUD(summary.totalNewStudyDebtAdded)} total
+                    {summary.totalNewSslAdded > 0
+                      ? ` (incl. +${formatAUD(summary.totalNewSslAdded)} SSL)`
+                      : ''}
                   </div>
                 </div>
               </div>
@@ -667,7 +744,7 @@ export const HecsCalc: React.FC = () => {
                   {summary.totalNewStudyDebtAdded > 0 ? (
                     <Bar
                       dataKey="newDebtAdded"
-                      name="New Study Debt (Tuition + SSAF)"
+                      name="New Study Debt (Tuition + SSAF + SSL)"
                       fill="#F59E0B"
                       fillOpacity={isDark ? 0.72 : 0.65}
                       radius={[3, 3, 0, 0]}
@@ -766,7 +843,7 @@ export const HecsCalc: React.FC = () => {
           {summary.projections.length > 0 ? (
             <SectionCard
               title="Year-by-Year Debt & Study Additions Schedule"
-              subtitle="Same-year tuition & SSAF additions are exempt from 1 June indexation until aged 11+ months"
+              subtitle="Same-year tuition, SSAF & SSL additions are exempt from 1 June indexation until aged 11+ months"
             >
               <div className="max-h-72 overflow-auto">
                 <table className="w-full text-left text-xs">
@@ -823,11 +900,11 @@ export const HecsCalc: React.FC = () => {
           >
             ATO applies HECS-HELP indexation on <strong>1 June</strong> each
             year only to unpaid debt aged <strong>11+ months</strong> — newly
-            incurred HECS-HELP tuition &amp; SA-HELP (SSAF) fees are exempt
-            from indexation in the calendar year they are added. Employer PAYG
-            withheld repayments are credited after your tax return is lodged, so
-            voluntary extra repayments aimed at beating 1 June indexation should
-            be paid via BPAY in <strong>mid-May</strong>.
+            incurred HECS-HELP tuition, SA-HELP (SSAF), and Student Start-up Loan
+            (SSL) amounts are exempt from indexation in the calendar year they
+            are added. Employer PAYG withheld repayments are credited after your
+            tax return is lodged, so voluntary extra repayments aimed at beating
+            1 June indexation should be paid via BPAY in <strong>mid-May</strong>.
           </AlertBanner>
         </div>
       </div>

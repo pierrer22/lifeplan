@@ -470,6 +470,11 @@ export const SSAF_2026 = {
   partTimeAnnual: 280,
 } as const;
 
+export const STUDENT_STARTUP_LOAN_2026 = {
+  perPeriod: 1349,
+  maxPeriodsPerYear: 2,
+} as const;
+
 export const ANNUAL_TUITION_BY_FIELD: Record<IndustryField, TuitionBand> = {
   tech_data: { cspAnnual: 9537, fullFeeAnnual: 42000, defaultDurationYears: 2 },
   public_policy_gov: { cspAnnual: 17399, fullFeeAnnual: 36000, defaultDurationYears: 1.5 },

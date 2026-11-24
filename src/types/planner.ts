@@ -161,6 +161,9 @@ export interface HecsFutureStudyInput {
   annualFeePerEftsl: number;
   includeSsaf: boolean;
   ssafAnnualAmount: number;
+  includeSsl?: boolean;
+  sslInstalments?: number;
+  sslAmountPerInstalment?: number;
 }
 
 export interface HecsSimulationInput {
@@ -185,6 +188,7 @@ export interface HecsProjectionYear {
   unitsCompletedThisYear: number;
   tuitionAddedThisYear: number;
   ssafAddedThisYear: number;
+  sslAddedThisYear: number;
   newDebtAdded: number;
   indexationAdded: number;
   compulsoryRepayment: number;
@@ -208,6 +212,7 @@ export interface HecsSummary {
   totalNewStudyDebtAdded: number;
   totalNewTuitionAdded: number;
   totalNewSsafAdded: number;
+  totalNewSslAdded: number;
   peakBalance: number;
   peakBalanceCalendarYear: number | null;
   studyCompletionYears: number;

@@ -280,6 +280,66 @@ describe('HECS-HELP Engine (src/engine/hecs.ts)', () => {
     expect(result.projections[4].unitsCompletedThisYear).toBe(0);
     expect(result.projections[4].newDebtAdded).toBe(0);
   });
+
+  it('adds a January 2027 Student Start-up Loan ($1,349) without same-year indexation', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 20000,
+      grossSalary: 85000,
+      salaryGrowthPct: 3.5,
+      indexationRatePct: 3.2,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 12,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 9537,
+        includeSsaf: true,
+        ssafAnnualAmount: 280,
+        includeSsl: true,
+        sslInstalments: 1,
+        sslAmountPerInstalment: 1349,
+      },
+    });
+
+    expect(result.totalNewSslAdded).toBe(1349);
+    expect(result.projections[0].sslAddedThisYear).toBe(1349);
+    expect(result.projections[1].sslAddedThisYear).toBe(0);
+    expect(result.totalNewStudyDebtAdded).toBe(16774.52);
+    expect(result.yearOneIndexation).toBe(640);
+  });
+
+  it('schedules multiple SSL lots (max 2/yr) even when totalUnitsRemaining is 0', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 0,
+      grossSalary: 60000,
+      salaryGrowthPct: 3.0,
+      indexationRatePct: 3.0,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 0,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 9537,
+        includeSsaf: false,
+        ssafAnnualAmount: 280,
+        includeSsl: true,
+        sslInstalments: 3,
+        sslAmountPerInstalment: 1349,
+      },
+    });
+
+    expect(result.projections[0].sslAddedThisYear).toBe(2698);
+    expect(result.projections[1].sslAddedThisYear).toBe(1349);
+    expect(result.projections[2].sslAddedThisYear).toBe(0);
+    expect(result.totalNewSslAdded).toBe(4047);
+    expect(result.totalNewStudyDebtAdded).toBe(4047);
+  });
 });
 
 describe('Super & FHSSS Engine (src/engine/super.ts)', () => {

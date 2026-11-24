@@ -62,27 +62,33 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
   const startCalendarYear = fy === '2026-27' ? 2027 : 2026;
 
   const fs = input.futureStudy;
-  const futureStudyActive = Boolean(
+  const hasFutureUnits = Boolean(
     fs?.enabled &&
       fs.totalUnitsRemaining > 0 &&
       fs.unitsPerTerm > 0 &&
       fs.termsPerYear > 0,
   );
+  const totalSslToSchedule =
+    fs?.enabled && fs.includeSsl && (fs.sslInstalments ?? 0) > 0
+      ? Math.max(0, Math.round(fs.sslInstalments ?? 0))
+      : 0;
+  const sslAmountPerInstalment = Math.max(0, fs?.sslAmountPerInstalment ?? 1349);
+  const futureStudyActive = hasFutureUnits || totalSslToSchedule > 0;
   const unitsPerYear =
-    futureStudyActive && fs
+    hasFutureUnits && fs
       ? Math.max(1, Math.round(fs.unitsPerTerm * fs.termsPerYear))
       : 0;
   const unitsPerEftsl = Math.max(1, fs?.unitsPerEftsl ?? 8);
   const costPerUnit =
-    futureStudyActive && fs
+    hasFutureUnits && fs
       ? Math.max(0, fs.annualFeePerEftsl) / unitsPerEftsl
       : 0;
   const totalUnitsToSchedule =
-    futureStudyActive && fs
+    hasFutureUnits && fs
       ? Math.max(0, Math.round(fs.totalUnitsRemaining))
       : 0;
   const studyCompletionYears =
-    futureStudyActive && unitsPerYear > 0
+    hasFutureUnits && unitsPerYear > 0
       ? Math.ceil(totalUnitsToSchedule / unitsPerYear)
       : 0;
 
@@ -101,6 +107,7 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
       totalNewStudyDebtAdded: 0,
       totalNewTuitionAdded: 0,
       totalNewSsafAdded: 0,
+      totalNewSslAdded: 0,
       peakBalance: 0,
       peakBalanceCalendarYear: null,
       studyCompletionYears: 0,
@@ -113,11 +120,13 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
   let balance = startingBalance;
   let baselineBalance = startingBalance;
   let remainingUnits = totalUnitsToSchedule;
+  let remainingSsl = totalSslToSchedule;
   let cumulativeRepaid = 0;
   let totalInterestIndexationPaid = 0;
   let baselineTotalIndexation = 0;
   let totalNewTuitionAdded = 0;
   let totalNewSsafAdded = 0;
+  let totalNewSslAdded = 0;
   let totalNewStudyDebtAdded = 0;
   let peakBalance = startingBalance;
   let peakBalanceCalendarYear: number | null =
@@ -130,22 +139,28 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
     const repaymentIncome = round2(salary + rfba + resc);
     const calendarYear = startCalendarYear + yearIndex - 1;
 
-    // Future study / Masters debt incurred in this year (tuition + optional SSAF)
+    // Future study / Masters debt incurred in this year (tuition + optional SSAF + optional SSL)
     const unitsCompletedThisYear =
       remainingUnits > 0 ? Math.min(remainingUnits, unitsPerYear) : 0;
     const tuitionAddedThisYear = round2(unitsCompletedThisYear * costPerUnit);
     const ssafAddedThisYear =
-      futureStudyActive && fs?.includeSsaf && unitsCompletedThisYear > 0 && unitsPerYear > 0
+      hasFutureUnits && fs?.includeSsaf && unitsCompletedThisYear > 0 && unitsPerYear > 0
         ? round2(
             Math.max(0, fs.ssafAnnualAmount) *
               Math.min(1, unitsCompletedThisYear / unitsPerYear),
           )
         : 0;
-    const newDebtAdded = round2(tuitionAddedThisYear + ssafAddedThisYear);
+    const sslLotsThisYear = remainingSsl > 0 ? Math.min(remainingSsl, 2) : 0;
+    const sslAddedThisYear = round2(sslLotsThisYear * sslAmountPerInstalment);
+    const newDebtAdded = round2(
+      tuitionAddedThisYear + ssafAddedThisYear + sslAddedThisYear,
+    );
     remainingUnits -= unitsCompletedThisYear;
+    remainingSsl -= sslLotsThisYear;
 
     totalNewTuitionAdded = round2(totalNewTuitionAdded + tuitionAddedThisYear);
     totalNewSsafAdded = round2(totalNewSsafAdded + ssafAddedThisYear);
+    totalNewSslAdded = round2(totalNewSslAdded + sslAddedThisYear);
     totalNewStudyDebtAdded = round2(totalNewStudyDebtAdded + newDebtAdded);
 
     // Active scenario: ATO indexes aged balance (11+ months) on 1 June before same-year new debt is added
@@ -183,11 +198,17 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
       peakBalanceCalendarYear = calendarYear;
     }
 
-    if (remainingUnits === 0 && yearsToPayoff === null && closingBalance <= 0.01) {
+    if (
+      remainingUnits === 0 &&
+      remainingSsl === 0 &&
+      yearsToPayoff === null &&
+      closingBalance <= 0.01
+    ) {
       yearsToPayoff = yearIndex;
     }
     if (
       remainingUnits === 0 &&
+      remainingSsl === 0 &&
       baselineYearsToPayoff === null &&
       baselineClosingBalance <= 0.01
     ) {
@@ -203,6 +224,7 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
       unitsCompletedThisYear,
       tuitionAddedThisYear,
       ssafAddedThisYear,
+      sslAddedThisYear,
       newDebtAdded,
       indexationAdded,
       compulsoryRepayment,
@@ -215,7 +237,12 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
     balance = closingBalance;
     baselineBalance = baselineClosingBalance;
 
-    if (remainingUnits === 0 && balance <= 0.01 && baselineBalance <= 0.01) {
+    if (
+      remainingUnits === 0 &&
+      remainingSsl === 0 &&
+      balance <= 0.01 &&
+      baselineBalance <= 0.01
+    ) {
       break;
     }
   }
@@ -244,8 +271,12 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
   }
 
   if (totalNewStudyDebtAdded > 0) {
+    const sslNote =
+      totalNewSslAdded > 0
+        ? ` + $${Math.round(totalNewSslAdded).toLocaleString()} SSL`
+        : '';
     notes.push(
-      `Future study adds ${totalUnitsToSchedule} units over ${studyCompletionYears} yr(s): $${Math.round(totalNewTuitionAdded).toLocaleString()} tuition + $${Math.round(totalNewSsafAdded).toLocaleString()} SSAF = $${Math.round(totalNewStudyDebtAdded).toLocaleString()} total (same-year additions are exempt from 1 June indexation until aged 11+ months).`,
+      `Future study adds ${totalUnitsToSchedule} units over ${studyCompletionYears} yr(s): $${Math.round(totalNewTuitionAdded).toLocaleString()} tuition + $${Math.round(totalNewSsafAdded).toLocaleString()} SSAF${sslNote} = $${Math.round(totalNewStudyDebtAdded).toLocaleString()} total (same-year additions are exempt from 1 June indexation until aged 11+ months).`,
     );
   }
 
@@ -279,6 +310,7 @@ export function simulateHecsPayoff(input: HecsSimulationInput): HecsSummary {
     totalNewStudyDebtAdded,
     totalNewTuitionAdded,
     totalNewSsafAdded,
+    totalNewSslAdded,
     peakBalance,
     peakBalanceCalendarYear,
     studyCompletionYears,
