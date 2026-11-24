@@ -91,8 +91,8 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   const monthlyPropertyGrowth =
     Math.pow(1 + Math.max(-0.2, input.capitalGrowthPct / 100), 1 / 12) - 1;
 
-  // Split investment return into ~3% unfranked/partially-franked dividend yield (taxed annually)
-  // and remaining capital appreciation (subject to AU 50% CGT discount at exit).
+  // Split investment return into ~3% dividend yield (taxed annually) and remaining
+  // capital appreciation (2026-27 Budget from 1 Jul 2027: CPI-indexed cost base + min 30% CGT).
   const grossReturnDec = Math.max(0, input.investmentReturnPct / 100);
   const marginalTaxDec = Math.max(0, Math.min(0.47, input.marginalTaxRatePct / 100));
   const dividendYieldAnnual = Math.min(grossReturnDec, 0.03);
@@ -104,16 +104,22 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
     input.mortgageRatePct / (1 - marginalTaxDec),
   );
   const mortgageRateDec = Math.max(0, input.mortgageRatePct) / 100;
+  const inflationDec = Math.max(0, input.inflationRatePct / 100);
   const dividendYieldForEquiv = 0.03;
+  const effectiveCgtRate = Math.max(0.3, marginalTaxDec);
   const maxYieldNetForEquiv = dividendYieldForEquiv * (1 - marginalTaxDec);
   const offsetEtfEquivDec =
     mortgageRateDec <= maxYieldNetForEquiv
       ? mortgageRateDec / (1 - marginalTaxDec)
-      : (mortgageRateDec + dividendYieldForEquiv * 0.5 * marginalTaxDec) /
-        (1 - 0.5 * marginalTaxDec);
+      : mortgageRateDec <= maxYieldNetForEquiv + inflationDec
+        ? dividendYieldForEquiv + (mortgageRateDec - maxYieldNetForEquiv)
+        : dividendYieldForEquiv +
+          inflationDec +
+          (mortgageRateDec - maxYieldNetForEquiv - inflationDec) /
+            (1 - effectiveCgtRate);
   const offsetTaxFreeEquivalentEtfRatePct = round2(offsetEtfEquivDec * 100);
 
-  const inflationDec = Math.max(0, input.inflationRatePct / 100);
+  const monthlyInflationRate = Math.pow(1 + inflationDec, 1 / 12) - 1;
   const rentGrowthDec = Math.max(0, input.annualRentIncreasePct / 100);
   const sellingCostsDec = Math.max(0, input.sellingCostsPct / 100);
   const maintenancePctDec = Math.max(0, input.maintenancePctOfValue / 100);
@@ -145,9 +151,9 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   let yearOneMonthlyRunningCosts = 0;
   let yearOneMonthlyOwnTotal = 0;
 
-  const computeAfterTaxPortfolioValue = (value: number, basis: number): number => {
-    const gain = Math.max(0, value - basis);
-    const cgt = gain * 0.5 * marginalTaxDec;
+  const computeAfterTaxPortfolioValue = (value: number, indexedBasis: number): number => {
+    const realGain = Math.max(0, value - indexedBasis);
+    const cgt = realGain * effectiveCgtRate;
     return Math.max(0, value - cgt);
   };
 
@@ -248,10 +254,11 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
       const buyerMonthlyCashOut = actualPI + monthlyRunning + monthlyOffsetFee;
       const diff = buyerMonthlyCashOut - monthlyRentTotal;
 
-      // Grow existing portfolios, add renter's parity offset saving + monthly cashflow difference
+      // Grow existing portfolios & CPI-index cost bases, then add renter's parity offset saving + cashflow diff
       renterPortfolio = renterPortfolio * (1 + monthlyPortfolioRate) + offsetMonthly;
-      renterCostBasis += offsetMonthly;
+      renterCostBasis = renterCostBasis * (1 + monthlyInflationRate) + offsetMonthly;
       buyerSidePortfolio *= 1 + monthlyPortfolioRate;
+      buyerSideCostBasis *= 1 + monthlyInflationRate;
 
       if (diff > 0) {
         renterPortfolio += diff;

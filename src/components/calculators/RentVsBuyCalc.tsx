@@ -634,14 +634,15 @@ export const RentVsBuyCalc: React.FC = () => {
                 Offset interest savings incur $0 income tax, $0 CGT, and $0
                 HECS/MLS Repayment Income impact, whereas HISA interest is taxed
                 annually at your marginal rate and the renter&apos;s ETF
-                portfolio incurs annual dividend tax + 50% discount CGT on sale.
+                portfolio incurs annual dividend tax + CGT on real gains
+                (CPI-indexed cost base, min 30% rate from 1 Jul 2027).
               </div>
             </SectionCard>
           ) : null}
 
           <SectionCard
             title={`Net Wealth Trajectory (${isReal ? "Today's Real $" : 'Nominal $'})`}
-            subtitle="Buyer home equity (after selling costs) vs Renter portfolio (after 50% discount CGT)"
+            subtitle="Buyer home equity (main residence CGT-exempt, after selling costs) vs Renter portfolio (CPI-indexed cost base, min 30% CGT)"
           >
             <div className="h-72 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">

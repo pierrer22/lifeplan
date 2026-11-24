@@ -44,14 +44,21 @@ export function calculateMortgageOffset(
     marginalTaxDec < 0.99
       ? round2(annualRatePct / (1 - marginalTaxDec))
       : annualRatePct;
+  // 2026-27 Federal Budget (from 1 Jul 2027): 50% CGT discount replaced by CPI cost-base
+  // indexation (assumes 2.8% CPI) + 30% minimum CGT tax floor on real gains.
   const annualRateDec = annualRatePct / 100;
   const dividendYield = 0.03;
+  const assumedCpi = 0.028;
+  const effectiveCgtRate = Math.max(0.3, marginalTaxDec);
   const maxYieldNet = dividendYield * (1 - marginalTaxDec);
   const etfEquivDec =
     annualRateDec <= maxYieldNet
       ? annualRateDec / (1 - marginalTaxDec)
-      : (annualRateDec + dividendYield * 0.5 * marginalTaxDec) /
-        (1 - 0.5 * marginalTaxDec);
+      : annualRateDec <= maxYieldNet + assumedCpi
+        ? dividendYield + (annualRateDec - maxYieldNet)
+        : dividendYield +
+          assumedCpi +
+          (annualRateDec - maxYieldNet - assumedCpi) / (1 - effectiveCgtRate);
   const taxFreeEquivalentEtfRatePct = round2(etfEquivDec * 100);
   const breakEvenOffsetBalanceForFee =
     annualOffsetFee > 0 && annualRatePct > 0

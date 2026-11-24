@@ -308,7 +308,8 @@ export const MortgageOffsetPanel: React.FC<MortgageOffsetPanelProps> = ({
                 ~{formatPercent(offsetSummary.taxFreeEquivalentEtfRatePct, 2)}{' '}
                 p.a.
               </strong>{' '}
-              pre-tax in ETFs/shares (3% yield + 50% CGT discount).
+              pre-tax in ETFs/shares (3% yield + CPI-indexed CGT, min 30% rate
+              from 1 Jul 2027).
             </div>
 
             {contextNote ? (
