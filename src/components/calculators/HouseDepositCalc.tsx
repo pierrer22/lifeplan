@@ -27,6 +27,7 @@ import {
   formatAUD,
   formatPercent,
 } from '../SharedPrimitives';
+import { MortgageOffsetPanel } from './MortgageOffsetPanel';
 
 const AU_STATES: readonly AuState[] = [
   'NSW',
@@ -628,6 +629,20 @@ export const HouseDepositCalc: React.FC = () => {
               </table>
             </div>
           </SectionCard>
+
+          <MortgageOffsetPanel
+            loanAmount={summary.loanAmount}
+            annualRatePct={mortgageRatePct}
+            loanTermYears={30}
+            marginalTaxRateWithMedicarePct={
+              lifePlan.tax.effectiveMarginalRateWithMedicare * 100
+            }
+            defaultInitialOffset={Math.max(
+              10000,
+              Math.min(50000, profile.currentCashSavings),
+            )}
+            contextNote="Keep your emergency fund in a 100% offset account rather than paying extra straight into the loan or a taxed HISA: cash remains withdrawable at call while saving mortgage interest tax-free."
+          />
 
           {summary.notes.length > 0 ? (
             <AlertBanner

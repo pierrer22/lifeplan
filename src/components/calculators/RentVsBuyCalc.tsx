@@ -57,6 +57,11 @@ export const RentVsBuyCalc: React.FC = () => {
   const [homeInsuranceAnnual, setHomeInsuranceAnnual] = useState(1800);
   const [maintenancePctOfValue, setMaintenancePctOfValue] = useState(0.8);
   const [sellingCostsPct, setSellingCostsPct] = useState(2.2);
+  const [offsetBalanceInitial, setOffsetBalanceInitial] = useState(() =>
+    Math.min(25000, profile.currentCashSavings),
+  );
+  const [offsetMonthlyContribution, setOffsetMonthlyContribution] = useState(0);
+  const [annualOffsetFee, setAnnualOffsetFee] = useState(0);
 
   useEffect(() => {
     setPropertyPrice(profile.targetPropertyPrice);
@@ -64,6 +69,7 @@ export const RentVsBuyCalc: React.FC = () => {
     setMortgageRatePct(profile.targetMortgageRatePct);
     setWeeklyRent(profile.currentWeeklyRent);
     setInvestmentReturnPct(profile.investmentReturnPct);
+    setOffsetBalanceInitial(Math.min(25000, profile.currentCashSavings));
   }, [
     profile.id,
     profile.targetPropertyPrice,
@@ -71,6 +77,7 @@ export const RentVsBuyCalc: React.FC = () => {
     profile.targetMortgageRatePct,
     profile.currentWeeklyRent,
     profile.investmentReturnPct,
+    profile.currentCashSavings,
   ]);
 
   const summary = useMemo(
@@ -99,6 +106,9 @@ export const RentVsBuyCalc: React.FC = () => {
         buyingCostsFixed: 3500,
         sellingCostsPct,
         horizonYears,
+        offsetBalanceInitial,
+        offsetMonthlyContribution,
+        annualOffsetFee,
       }),
     [
       profile.state,
@@ -122,6 +132,9 @@ export const RentVsBuyCalc: React.FC = () => {
       maintenancePctOfValue,
       sellingCostsPct,
       horizonYears,
+      offsetBalanceInitial,
+      offsetMonthlyContribution,
+      annualOffsetFee,
     ],
   );
 
@@ -172,6 +185,9 @@ export const RentVsBuyCalc: React.FC = () => {
     setHomeInsuranceAnnual(1800);
     setMaintenancePctOfValue(0.8);
     setSellingCostsPct(2.2);
+    setOffsetBalanceInitial(Math.min(25000, profile.currentCashSavings));
+    setOffsetMonthlyContribution(0);
+    setAnnualOffsetFee(0);
   };
 
   const winnerTone =
@@ -465,6 +481,60 @@ export const RentVsBuyCalc: React.FC = () => {
 
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
                 <div className="mb-2 text-[11px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 uppercase">
+                  Mortgage Offset Account
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <CurrencyInput
+                      label="Starting Offset Cash"
+                      value={offsetBalanceInitial}
+                      onChange={setOffsetBalanceInitial}
+                      min={0}
+                      max={500000}
+                      step={2500}
+                    />
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[0, 10000, 25000, 50000].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setOffsetBalanceInitial(preset)}
+                          className={`rounded-md border py-1 text-[11px] font-semibold transition ${
+                            offsetBalanceInitial === preset
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {preset === 0 ? '$0' : `$${preset / 1000}k`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <CurrencyInput
+                      label="Monthly Top-Up"
+                      value={offsetMonthlyContribution}
+                      onChange={setOffsetMonthlyContribution}
+                      min={0}
+                      max={15000}
+                      step={100}
+                      suffix="/mo"
+                    />
+                    <CurrencyInput
+                      label="Package Fee"
+                      value={annualOffsetFee}
+                      onChange={setAnnualOffsetFee}
+                      min={0}
+                      max={1500}
+                      step={25}
+                      suffix="/yr"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="mb-2 text-[11px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 uppercase">
                   Ownership Running Costs
                 </div>
                 <div className="space-y-3">
@@ -525,6 +595,40 @@ export const RentVsBuyCalc: React.FC = () => {
 
         {/* Right Charts & Tables */}
         <div className="space-y-6 lg:col-span-8">
+          {offsetBalanceInitial > 0 || offsetMonthlyContribution > 0 ? (
+            <SectionCard
+              title="Mortgage Offset Benefit"
+              subtitle="Apples-to-apples comparison: renter invests identical extra starting cash & monthly top-ups"
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 tabular-nums">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
+                  <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Interest Saved ({horizonYears} yrs)
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                    {formatAUD(summary.totalOffsetInterestSaved)}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
+                  <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Tax-Free HISA Equivalent
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold text-slate-900 dark:text-slate-100">
+                    {formatPercent(summary.offsetTaxFreeEquivalentRatePct, 2)}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
+                  <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Offset Cash at Yr {horizonYears}
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold text-blue-700 dark:text-blue-400">
+                    {formatAUD(summary.finalOffsetBalance)}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          ) : null}
+
           <SectionCard
             title={`Net Wealth Trajectory (${isReal ? "Today's Real $" : 'Nominal $'})`}
             subtitle="Buyer home equity (after selling costs) vs Renter portfolio (after 50% discount CGT)"

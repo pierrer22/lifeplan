@@ -17,17 +17,17 @@ LifePlanner is an interactive React + TypeScript financial, housing, superannuat
 - **House Deposit & Required Income** (`HouseDepositCalc`):
   - Compares **5% HGS ($0 LMI)**, **10% + LMI**, and **20% ($0 LMI)** deposit strategies across all 8 Australian states and territories.
   - Models **2026 state stamp duty & First Home Buyer (FHB) concessions/grants** (including ACT HBCS $0 duty with no price cap from 1 July 2026, NSW FHBAS $0 up to $800k / tapered to $1M, VIC, QLD, WA, SA, TAS, NT) and regional/metro HGS price caps.
-  - Includes **APRA +3% serviceability buffer** borrowing power with HECS debt impact, a **Required Gross Income solver**, and a deposit accumulation timeline incorporating FHSSS.
+  - Includes **APRA +3% serviceability buffer** borrowing power with HECS debt impact, a **Required Gross Income solver**, a deposit accumulation timeline incorporating FHSSS, and a **100% Mortgage Offset Account** benefit projection.
 - **Mortgage Loan Approval** (`MortgageApprovalCalc`):
   - Models Australian bank underwriting across 4 gates: **APRA +3% serviceability buffer**, **LVR & HGS/LMI**, **Debt-to-Income (DTI)**, and **Employment & Credit Score**.
   - Applies **HEM living expense floors** (single/couple + dependents), **3.8%/month credit card limit shading**, 80% bonus shading, and exact borrowing power lost to HECS-HELP and credit cards.
-  - Includes an **Interest Rate Stress Test** (`-0.5%` to `+3.0%`) and prioritized steps to strengthen loan approval.
+  - Includes an **Interest Rate Stress Test** (`-0.5%` to `+3.0%`), post-settlement **100% Mortgage Offset Account** impact analysis, and prioritized steps to strengthen loan approval.
 - **Rent vs Save Optimizer** (`RentBudgetCalc`):
   - Calculates monthly surplus, savings rate, and **30% housing stress** status against household net income.
   - Models a weekly rent sensitivity curve ($250–$950/wk), maximum sustainable rent to stay on schedule, and capital-city rent benchmarks (Sydney, Canberra, Melbourne, Brisbane, Perth, Adelaide).
 - **Rent vs Buy (Mortgage)** (`RentVsBuyCalc`):
   - Compares renting + investing against buying with a mortgage in both **Nominal** and **Inflation-Adjusted Real** dollars over 3–30 years.
-  - Models rent increases, mortgage interest vs principal amortisation, capital growth, inflation, strata, council rates, water rates, home & renters insurance, maintenance, stamp duty/LMI, selling costs, and cashflow-parity portfolio returns.
+  - Models rent increases, mortgage interest vs principal amortisation, **100% mortgage offset cash & monthly top-ups** (with strict renter portfolio parity), capital growth, inflation, strata, council rates, water rates, home & renters insurance, maintenance, stamp duty/LMI, selling costs, and cashflow-parity portfolio returns.
 - **Super & FHSSS** (`SuperFhsssCalc`):
   - Tracks employer SG (12.0% standard or custom, e.g. 15.4% APS) + salary sacrifice against the **$32,500** FY2026-27 ($30,000 FY2025-26) concessional cap and carry-forward unused cap eligibility (`TSB < $500,000`).
   - Evaluates bracket-aware income tax savings vs 15% contributions tax, **Division 293** ($250,000 threshold), RESC knock-on impact on HECS/MLS Repayment Income, **FHSSS** ($15,000/yr, $50,000 lifetime, deemed SIC ~7.1%, marginal + 2% - 30% offset exit tax) vs HISA, and super balance projected to age 60.
@@ -87,7 +87,8 @@ lifeplan/
     │   ├── super.ts                 # Concessional cap, carry-forward, FHSSS
     │   ├── housing.ts               # Stamp duty, FHB, deposit strategies, rent optimizer
     │   ├── mortgageApproval.ts      # APRA +3% underwriting, HEM floor, DTI & card shading
-    │   ├── rentVsBuy.ts             # Rent vs mortgage comparison with full ownership costs
+    │   ├── mortgageOffset.ts        # 100% offset interest saved, term reduction & HISA equiv
+    │   ├── rentVsBuy.ts             # Rent vs mortgage comparison with offset & running costs
     │   ├── novatedLease.ts          # EV/ICE lease, GST cap, RFBA HECS/MLS knock-on
     │   ├── education.ts             # CSP vs Full-Fee ROI & Austudy modelling
     │   ├── employment.ts            # Salary ladders & Sydney vs Canberra comparison

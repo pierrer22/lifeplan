@@ -77,6 +77,11 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   const upfrontSunkCosts = Math.round(stampDuty + lmiEstimate + buyingCostsFixed);
   const initialCashRequired = Math.round(depositAmount + upfrontSunkCosts);
 
+  const offsetInit = Math.max(0, Math.round(input.offsetBalanceInitial ?? 0));
+  const offsetMonthly = Math.max(0, input.offsetMonthlyContribution ?? 0);
+  const annualOffsetFee = Math.max(0, input.annualOffsetFee ?? 0);
+  const hasOffsetActivity = offsetInit > 0 || offsetMonthly > 0;
+
   const monthlyMortgageRate = Math.max(0, input.mortgageRatePct) / 100 / 12;
   const scheduledMonthlyPI = computeMonthlyPI(
     initialLoanAmount,
@@ -95,6 +100,9 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   const netAnnualPortfolioReturn =
     dividendYieldAnnual * (1 - marginalTaxDec) + capReturnAnnual;
   const monthlyPortfolioRate = Math.pow(1 + netAnnualPortfolioReturn, 1 / 12) - 1;
+  const offsetTaxFreeEquivalentRatePct = round2(
+    input.mortgageRatePct / (1 - marginalTaxDec),
+  );
 
   const inflationDec = Math.max(0, input.inflationRatePct / 100);
   const rentGrowthDec = Math.max(0, input.annualRentIncreasePct / 100);
@@ -103,14 +111,18 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
 
   let propertyValue = propertyPrice;
   let loanBalance = initialLoanAmount;
-  let renterPortfolio = initialCashRequired;
-  let renterCostBasis = initialCashRequired;
+  let noOffsetLoanBalance = initialLoanAmount;
+  let buyerOffsetBalance = offsetInit;
+  let renterPortfolio = initialCashRequired + offsetInit;
+  let renterCostBasis = initialCashRequired + offsetInit;
   let buyerSidePortfolio = 0;
   let buyerSideCostBasis = 0;
 
   let totalRentPaid = 0;
   let totalRentersInsurance = 0;
   let totalMortgageInterest = 0;
+  let totalNoOffsetInterest = 0;
+  let totalOffsetFees = 0;
   let totalPrincipalRepaid = 0;
   let totalStrata = 0;
   let totalCouncil = 0;
@@ -135,10 +147,14 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
       year: 0,
       propertyValue: Math.round(propertyPrice),
       loanBalance: Math.round(initialLoanAmount),
-      buyerNetWealthNominal: Math.round(propertyPrice - initialLoanAmount - propertyPrice * sellingCostsDec),
-      buyerNetWealthReal: Math.round(propertyPrice - initialLoanAmount - propertyPrice * sellingCostsDec),
-      renterNetWealthNominal: Math.round(initialCashRequired),
-      renterNetWealthReal: Math.round(initialCashRequired),
+      buyerNetWealthNominal: Math.round(
+        propertyPrice - initialLoanAmount - propertyPrice * sellingCostsDec + offsetInit,
+      ),
+      buyerNetWealthReal: Math.round(
+        propertyPrice - initialLoanAmount - propertyPrice * sellingCostsDec + offsetInit,
+      ),
+      renterNetWealthNominal: Math.round(initialCashRequired + offsetInit),
+      renterNetWealthReal: Math.round(initialCashRequired + offsetInit),
       annualRentCost: 0,
       annualOwnershipTotalCost: 0,
       annualMortgageInterest: 0,
@@ -173,12 +189,33 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
 
     let yearMortgageInterest = 0;
     let yearMortgagePI = 0;
+    let yearOffsetFees = 0;
 
     for (let m = 1; m <= 12; m++) {
+      // Apples-to-apples monthly offset savings contributed equally to buyer offset & renter portfolio
+      buyerOffsetBalance += offsetMonthly;
+
+      // Track baseline mortgage interest without offset for exact savings attribution
+      if (noOffsetLoanBalance > 0) {
+        const noOffInt = noOffsetLoanBalance * monthlyMortgageRate;
+        const noOffPay = Math.min(noOffsetLoanBalance + noOffInt, scheduledMonthlyPI);
+        const noOffPrincipal = Math.max(0, noOffPay - noOffInt);
+        noOffsetLoanBalance = Math.max(0, noOffsetLoanBalance - noOffPrincipal);
+        totalNoOffsetInterest += noOffInt;
+      }
+
       let monthlyInterest = 0;
       let actualPI = 0;
+      let monthlyOffsetFee = 0;
       if (loanBalance > 0) {
-        monthlyInterest = loanBalance * monthlyMortgageRate;
+        if (hasOffsetActivity && annualOffsetFee > 0) {
+          monthlyOffsetFee = annualOffsetFee / 12;
+          yearOffsetFees += monthlyOffsetFee;
+          totalOffsetFees += monthlyOffsetFee;
+        }
+        const effectiveOffset = Math.min(loanBalance, buyerOffsetBalance);
+        const chargeablePrincipal = Math.max(0, loanBalance - effectiveOffset);
+        monthlyInterest = chargeablePrincipal * monthlyMortgageRate;
         const rawPayment = Math.min(loanBalance + monthlyInterest, scheduledMonthlyPI);
         const principalPaid = Math.max(0, rawPayment - monthlyInterest);
         loanBalance = Math.max(0, loanBalance - principalPaid);
@@ -193,17 +230,18 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
         yearOneMonthlyRent = round2(monthlyRentTotal);
         yearOneMonthlyMortgagePI = round2(actualPI);
         yearOneMonthlyMortgageInterest = round2(monthlyInterest);
-        yearOneMonthlyRunningCosts = round2(monthlyRunning);
-        yearOneMonthlyOwnTotal = round2(actualPI + monthlyRunning);
+        yearOneMonthlyRunningCosts = round2(monthlyRunning + monthlyOffsetFee);
+        yearOneMonthlyOwnTotal = round2(actualPI + monthlyRunning + monthlyOffsetFee);
       }
 
       propertyValue *= 1 + monthlyPropertyGrowth;
 
-      const buyerMonthlyCashOut = actualPI + monthlyRunning;
+      const buyerMonthlyCashOut = actualPI + monthlyRunning + monthlyOffsetFee;
       const diff = buyerMonthlyCashOut - monthlyRentTotal;
 
-      // Grow existing portfolios, then invest monthly cashflow difference
-      renterPortfolio *= 1 + monthlyPortfolioRate;
+      // Grow existing portfolios, add renter's parity offset saving + monthly cashflow difference
+      renterPortfolio = renterPortfolio * (1 + monthlyPortfolioRate) + offsetMonthly;
+      renterCostBasis += offsetMonthly;
       buyerSidePortfolio *= 1 + monthlyPortfolioRate;
 
       if (diff > 0) {
@@ -229,6 +267,7 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
       propertyValue -
       loanBalance -
       sellingCostAtYear +
+      buyerOffsetBalance +
       computeAfterTaxPortfolioValue(buyerSidePortfolio, buyerSideCostBasis);
     const renterEquityNominal = computeAfterTaxPortfolioValue(
       renterPortfolio,
@@ -250,6 +289,7 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
     const cumulativeBuyUnrecoverable = Math.round(
       upfrontSunkCosts +
         totalMortgageInterest +
+        totalOffsetFees +
         totalStrata +
         totalCouncil +
         totalWater +
@@ -267,9 +307,11 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
       renterNetWealthNominal: Math.round(renterEquityNominal),
       renterNetWealthReal: Math.round(renterEquityReal),
       annualRentCost: Math.round(annualRent + annualRentersIns),
-      annualOwnershipTotalCost: Math.round(yearMortgagePI + annualRunningCosts),
+      annualOwnershipTotalCost: Math.round(
+        yearMortgagePI + annualRunningCosts + yearOffsetFees,
+      ),
       annualMortgageInterest: Math.round(yearMortgageInterest),
-      annualOwnershipRunningCosts: Math.round(annualRunningCosts),
+      annualOwnershipRunningCosts: Math.round(annualRunningCosts + yearOffsetFees),
       cumulativeRentUnrecoverable,
       cumulativeBuyUnrecoverable,
     });
@@ -303,12 +345,17 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   const totalBuyUnrecoverable = Math.round(
     upfrontSunkCosts +
       totalMortgageInterest +
+      totalOffsetFees +
       totalStrata +
       totalCouncil +
       totalWater +
       totalHomeInsurance +
       totalMaintenance +
       estimatedSellingCosts,
+  );
+  const totalOffsetInterestSaved = Math.max(
+    0,
+    Math.round(totalNoOffsetInterest - totalMortgageInterest),
   );
 
   const costBreakdown: RentVsBuyCostItem[] = [
@@ -367,6 +414,14 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
       color: '#64748B',
     },
   ];
+  if (totalOffsetFees > 0) {
+    costBreakdown.push({
+      label: 'Offset Package Fees',
+      amount: Math.round(totalOffsetFees),
+      side: 'buy',
+      color: '#A855F7',
+    });
+  }
 
   const insights: string[] = [];
   if (winner === 'buy') {
@@ -399,6 +454,12 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
   insights.push(
     `Non-mortgage ownership costs (strata, council, water, insurance, maintenance) total $${totalRunningOwnership.toLocaleString('en-AU')} over ${horizonYears} years — $${Math.round(yearOneMonthlyRunningCosts).toLocaleString('en-AU')}/mo in Year 1.`,
   );
+
+  if (hasOffsetActivity) {
+    insights.push(
+      `Mortgage offset savings ($${offsetInit.toLocaleString('en-AU')} start + $${Math.round(offsetMonthly).toLocaleString('en-AU')}/mo) cut mortgage interest by $${totalOffsetInterestSaved.toLocaleString('en-AU')} (${offsetTaxFreeEquivalentRatePct.toFixed(2)}% tax-free HISA equivalent; renter given identical extra savings for fairness).`,
+    );
+  }
 
   if (hgsEligible && lvrPct > 80) {
     insights.push(
@@ -442,6 +503,11 @@ export function calculateRentVsBuy(input: RentVsBuyInput): RentVsBuySummary {
     upfrontSunkCosts,
     estimatedSellingCosts,
     totalBuyUnrecoverable,
+    offsetBalanceInitial: offsetInit,
+    offsetMonthlyContribution: Math.round(offsetMonthly),
+    finalOffsetBalance: Math.round(buyerOffsetBalance),
+    totalOffsetInterestSaved,
+    offsetTaxFreeEquivalentRatePct,
     costBreakdown,
     yearlySeries,
     insights,

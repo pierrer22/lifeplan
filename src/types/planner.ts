@@ -688,6 +688,9 @@ export interface RentVsBuyInput {
   buyingCostsFixed: number;
   sellingCostsPct: number;
   horizonYears: number;
+  offsetBalanceInitial?: number;
+  offsetMonthlyContribution?: number;
+  annualOffsetFee?: number;
 }
 
 export interface RentVsBuyYearPoint {
@@ -749,7 +752,61 @@ export interface RentVsBuySummary {
   upfrontSunkCosts: number;
   estimatedSellingCosts: number;
   totalBuyUnrecoverable: number;
+  offsetBalanceInitial: number;
+  offsetMonthlyContribution: number;
+  finalOffsetBalance: number;
+  totalOffsetInterestSaved: number;
+  offsetTaxFreeEquivalentRatePct: number;
   costBreakdown: RentVsBuyCostItem[];
   yearlySeries: RentVsBuyYearPoint[];
   insights: string[];
+}
+
+// ============================================================================
+// Mortgage Offset Account Engine Types
+// ============================================================================
+
+export interface MortgageOffsetInput {
+  loanAmount: number;
+  annualRatePct: number;
+  loanTermYears: number;
+  initialOffsetBalance: number;
+  monthlyOffsetContribution: number;
+  annualOffsetFee?: number;
+  marginalTaxRateWithMedicarePct: number;
+  hisaRatePct?: number;
+}
+
+export interface MortgageOffsetYearPoint {
+  year: number;
+  baselineLoanBalance: number;
+  offsetLoanBalance: number;
+  offsetCashBalance: number;
+  netDebtWithOffset: number;
+  cumulativeInterestSaved: number;
+}
+
+export interface MortgageOffsetSummary {
+  loanAmount: number;
+  annualRatePct: number;
+  loanTermYears: number;
+  scheduledMonthlyRepayment: number;
+  baselineTotalInterest: number;
+  offsetTotalInterest: number;
+  grossInterestSaved: number;
+  totalOffsetFeesPaid: number;
+  netInterestSavedAfterFees: number;
+  baselineMonths: number;
+  offsetMonths: number;
+  monthsSavedPayoff: number;
+  yearsSavedPayoff: number;
+  monthsToFullOffset: number | null;
+  yearsToFullOffset: number | null;
+  yearOneInterestSaved: number;
+  yearOneHisaAfterTaxInterest: number;
+  yearOneNetAdvantageVsHisa: number;
+  taxFreeEquivalentHisaRatePct: number;
+  breakEvenOffsetBalanceForFee: number;
+  finalOffsetCashBalance: number;
+  yearlySeries: MortgageOffsetYearPoint[];
 }

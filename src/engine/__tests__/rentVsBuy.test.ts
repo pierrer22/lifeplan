@@ -112,4 +112,31 @@ describe('calculateRentVsBuy', () => {
       expect(Number.isFinite(pt.renterNetWealthNominal)).toBe(true);
     }
   });
+
+  it('lowers total mortgage interest and improves buyer net wealth when holding cash in offset', () => {
+    const noOffset = calculateRentVsBuy(makeBaseInput({ offsetBalanceInitial: 0 }));
+    const withOffset = calculateRentVsBuy(
+      makeBaseInput({
+        offsetBalanceInitial: 50000,
+        offsetMonthlyContribution: 400,
+      }),
+    );
+
+    expect(withOffset.totalMortgageInterest).toBeLessThan(noOffset.totalMortgageInterest);
+    expect(withOffset.totalOffsetInterestSaved).toBeGreaterThan(30000);
+    expect(withOffset.finalOffsetBalance).toBe(50000 + 400 * 12 * 15);
+    expect(withOffset.offsetTaxFreeEquivalentRatePct).toBeCloseTo(8.82, 2);
+  });
+
+  it('preserves Year-0 apples-to-apples starting wealth parity when initial offset cash is provided', () => {
+    const base = calculateRentVsBuy(makeBaseInput({ offsetBalanceInitial: 0 }));
+    const offset = calculateRentVsBuy(makeBaseInput({ offsetBalanceInitial: 30000 }));
+
+    expect(offset.yearlySeries[0].renterNetWealthNominal).toBe(
+      base.yearlySeries[0].renterNetWealthNominal + 30000,
+    );
+    expect(offset.yearlySeries[0].buyerNetWealthNominal).toBe(
+      base.yearlySeries[0].buyerNetWealthNominal + 30000,
+    );
+  });
 });
