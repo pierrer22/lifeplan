@@ -17,6 +17,7 @@ export {
   calculateRentBudgetPlan,
 } from './housing';
 export { evaluateMortgageApproval } from './mortgageApproval';
+export { calculateRentVsBuy } from './rentVsBuy';
 export { calculateNovatedLease } from './novatedLease';
 export { analyzeEducationRoi } from './education';
 export { analyzeCareerPathway } from './employment';

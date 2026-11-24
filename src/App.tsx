@@ -9,6 +9,7 @@ import {
   MortgageApprovalCalc,
   NovatedLeaseCalc,
   RentBudgetCalc,
+  RentVsBuyCalc,
   SuperFhsssCalc,
 } from './components/calculators';
 
@@ -24,6 +25,8 @@ const ActiveTabView: React.FC = () => {
       return <MortgageApprovalCalc />;
     case 'rent':
       return <RentBudgetCalc />;
+    case 'rent_vs_buy':
+      return <RentVsBuyCalc />;
     case 'super':
       return <SuperFhsssCalc />;
     case 'hecs':

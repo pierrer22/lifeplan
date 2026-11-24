@@ -28,6 +28,7 @@ export type TabId =
   | 'housing'
   | 'mortgage'
   | 'rent'
+  | 'rent_vs_buy'
   | 'super'
   | 'hecs'
   | 'novated'
@@ -621,4 +622,98 @@ export interface MortgageApprovalSummary {
   borrowingBreakdown: BorrowingImpactItem[];
   rateStressSeries: RateStressPoint[];
   unlockActions: string[];
+}
+
+// ============================================================================
+// Rent vs Buy (Mortgage) Comparison Types
+// ============================================================================
+
+export interface RentVsBuyInput {
+  state: AuState;
+  cityLabel: string;
+  propertyPrice: number;
+  depositPct: number;
+  isFirstHomeBuyer: boolean;
+  isNewHome: boolean;
+  mortgageRatePct: number;
+  loanTermYears: number;
+  capitalGrowthPct: number;
+  inflationRatePct: number;
+  weeklyRent: number;
+  annualRentIncreasePct: number;
+  rentersInsuranceAnnual: number;
+  investmentReturnPct: number;
+  marginalTaxRatePct: number;
+  strataAnnual: number;
+  councilRatesAnnual: number;
+  waterRatesAnnual: number;
+  homeInsuranceAnnual: number;
+  maintenancePctOfValue: number;
+  buyingCostsFixed: number;
+  sellingCostsPct: number;
+  horizonYears: number;
+}
+
+export interface RentVsBuyYearPoint {
+  year: number;
+  propertyValue: number;
+  loanBalance: number;
+  buyerNetWealthNominal: number;
+  buyerNetWealthReal: number;
+  renterNetWealthNominal: number;
+  renterNetWealthReal: number;
+  annualRentCost: number;
+  annualOwnershipTotalCost: number;
+  annualMortgageInterest: number;
+  annualOwnershipRunningCosts: number;
+  cumulativeRentUnrecoverable: number;
+  cumulativeBuyUnrecoverable: number;
+}
+
+export interface RentVsBuyCostItem {
+  label: string;
+  amount: number;
+  side: 'rent' | 'buy';
+  color: string;
+}
+
+export interface RentVsBuySummary {
+  horizonYears: number;
+  winner: 'buy' | 'rent' | 'tie';
+  winnerReal: 'buy' | 'rent' | 'tie';
+  initialCashRequired: number;
+  depositAmount: number;
+  stampDuty: number;
+  lmiEstimate: number;
+  buyingCostsFixed: number;
+  initialLoanAmount: number;
+  buyerNetWealthNominal: number;
+  renterNetWealthNominal: number;
+  netWealthDiffNominal: number;
+  buyerNetWealthReal: number;
+  renterNetWealthReal: number;
+  netWealthDiffReal: number;
+  breakEvenYearNominal: number | null;
+  breakEvenYearReal: number | null;
+  yearOneMonthlyRent: number;
+  yearOneMonthlyMortgagePI: number;
+  yearOneMonthlyMortgageInterest: number;
+  yearOneMonthlyRunningCosts: number;
+  yearOneMonthlyOwnTotal: number;
+  totalRentPaid: number;
+  totalRentersInsurance: number;
+  totalRentUnrecoverable: number;
+  totalMortgageInterest: number;
+  totalPrincipalRepaid: number;
+  totalStrata: number;
+  totalCouncil: number;
+  totalWater: number;
+  totalHomeInsurance: number;
+  totalMaintenance: number;
+  upfrontSunkCosts: number;
+  estimatedSellingCosts: number;
+  totalBuyUnrecoverable: number;
+  costBreakdown: RentVsBuyCostItem[];
+  yearlySeries: RentVsBuyYearPoint[];
+  insights: string[];
 }
