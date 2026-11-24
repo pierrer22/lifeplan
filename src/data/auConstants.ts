@@ -458,14 +458,26 @@ export interface TuitionBand {
   defaultDurationYears: number;
 }
 
+export const CSP_STUDENT_CONTRIBUTION_BANDS_2026 = [
+  { band: 1, label: 'Band 1 — Education, Maths, Nursing, Languages', annualPerEftsl: 4738 },
+  { band: 2, label: 'Band 2 — IT/Computing, Engineering, Science, Health', annualPerEftsl: 9537 },
+  { band: 3, label: 'Band 3 — Medicine, Dentistry, Vet Science', annualPerEftsl: 13558 },
+  { band: 4, label: 'Band 4 — Law, Commerce, Economics, Policy/Society', annualPerEftsl: 17399 },
+] as const;
+
+export const SSAF_2026 = {
+  fullTimeAnnual: 373,
+  partTimeAnnual: 280,
+} as const;
+
 export const ANNUAL_TUITION_BY_FIELD: Record<IndustryField, TuitionBand> = {
-  tech_data: { cspAnnual: 9314, fullFeeAnnual: 42000, defaultDurationYears: 2 },
-  public_policy_gov: { cspAnnual: 16992, fullFeeAnnual: 36000, defaultDurationYears: 1.5 },
-  engineering: { cspAnnual: 9314, fullFeeAnnual: 44000, defaultDurationYears: 2 },
-  finance_commerce: { cspAnnual: 16992, fullFeeAnnual: 45000, defaultDurationYears: 2 },
-  health: { cspAnnual: 4627, fullFeeAnnual: 48000, defaultDurationYears: 2 },
-  trades: { cspAnnual: 3800, fullFeeAnnual: 12000, defaultDurationYears: 2 },
-  education: { cspAnnual: 4627, fullFeeAnnual: 28000, defaultDurationYears: 2 },
+  tech_data: { cspAnnual: 9537, fullFeeAnnual: 42000, defaultDurationYears: 2 },
+  public_policy_gov: { cspAnnual: 17399, fullFeeAnnual: 36000, defaultDurationYears: 1.5 },
+  engineering: { cspAnnual: 9537, fullFeeAnnual: 44000, defaultDurationYears: 2 },
+  finance_commerce: { cspAnnual: 17399, fullFeeAnnual: 45000, defaultDurationYears: 2 },
+  health: { cspAnnual: 9537, fullFeeAnnual: 48000, defaultDurationYears: 2 },
+  trades: { cspAnnual: 4738, fullFeeAnnual: 12000, defaultDurationYears: 2 },
+  education: { cspAnnual: 4738, fullFeeAnnual: 28000, defaultDurationYears: 2 },
 };
 
 export const QUALIFICATION_TUITION_MULTIPLIER: Record<QualificationLevel, number> = {

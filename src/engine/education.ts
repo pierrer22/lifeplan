@@ -8,6 +8,7 @@ import {
   QUALIFICATION_LABELS,
   QUALIFICATION_SALARY_UPLIFT,
   QUALIFICATION_TUITION_MULTIPLIER,
+  SSAF_2026,
 } from '../data/auConstants';
 import type {
   EducationEarningsPoint,
@@ -77,8 +78,12 @@ function computeTuitionAnnual(
   field: IndustryField,
   isCsp: boolean,
   studyMode: 'full_time' | 'part_time' | 'none',
+  annualOverride?: number,
 ): number {
   if (studyMode === 'none') return 0;
+  if (annualOverride !== undefined && Number.isFinite(annualOverride) && annualOverride >= 0) {
+    return Math.round(annualOverride);
+  }
   const band = ANNUAL_TUITION_BY_FIELD[field];
   const qualMult = QUALIFICATION_TUITION_MULTIPLIER[qualification];
   const baseAnnual = isCsp ? band.cspAnnual : band.fullFeeAnnual;
@@ -90,12 +95,16 @@ function computeStudyLivingIncome(
   baselineNoStudy: number,
   studyMode: 'full_time' | 'part_time' | 'none',
   partTimeStudyIncome: number,
+  partTimeWorkFullTime: boolean,
 ): { austudyEligible: boolean; annualStudyIncome: number } {
   if (studyMode === 'none') {
     return { austudyEligible: false, annualStudyIncome: baselineNoStudy };
   }
 
   if (studyMode === 'part_time') {
+    if (partTimeWorkFullTime) {
+      return { austudyEligible: false, annualStudyIncome: baselineNoStudy };
+    }
     const ptIncome =
       partTimeStudyIncome > 0 && profile.employmentStatus === 'studying_austudy'
         ? Math.max(partTimeStudyIncome, Math.round(baselineNoStudy * 0.7))
@@ -145,6 +154,7 @@ function simulateNetWealthPath(
   annualStudyIncome: number,
   tuitionTotal: number,
   expectedGradIncome: number,
+  workFullTimeWithRaises = false,
 ): PathSimulationResult {
   const growthRate = Math.max(0, profile.salaryGrowthPct) / 100;
   const indexRate = HECS_DEFAULT_INDEXATION_PCT / 100;
@@ -167,12 +177,16 @@ function simulateNetWealthPath(
     const workFraction = 1 - studyFraction;
 
     const yearsPostStudy = Math.max(0, yearEnd - durationYears - 0.5);
-    const postStudyBase =
-      studyMode === 'none'
+    const postStudyBase = workFullTimeWithRaises
+      ? expectedGradIncome * Math.pow(1 + growthRate, year - 1)
+      : studyMode === 'none'
         ? baselineNoStudy * Math.pow(1 + growthRate, year - 1)
         : expectedGradIncome * Math.pow(1 + growthRate, yearsPostStudy);
+    const studyYearBase = workFullTimeWithRaises
+      ? baselineNoStudy * Math.pow(1 + growthRate, year - 1)
+      : annualStudyIncome;
 
-    const grossThisYear = studyFraction * annualStudyIncome + workFraction * postStudyBase;
+    const grossThisYear = studyFraction * studyYearBase + workFraction * postStudyBase;
     const tuitionAddedThisYear =
       durationYears > 0 ? tuitionTotal * (studyFraction / durationYears) : 0;
 
@@ -237,26 +251,58 @@ function buildScenarioComparison(
   partTimeStudyIncome: number,
   expectedGradIncome: number,
   noStudyPath: PathSimulationResult,
-): { comparison: EducationScenarioComparison; path: PathSimulationResult } {
+  options?: {
+    partTimeWorkFullTime?: boolean;
+    annualStudentContributionOverride?: number;
+    includeSsaf?: boolean;
+  },
+): {
+  comparison: EducationScenarioComparison;
+  path: PathSimulationResult;
+  studentContributionAnnualPerEftsl: number;
+  courseEftsl: number;
+  studentContributionTotal: number;
+  ssafTotal: number;
+} {
   const effectiveDuration = studyMode === 'none' ? 0 : Math.max(0, durationYears);
-  const tuitionPerYearFullLoad = computeTuitionAnnual(qual, field, isCsp, studyMode);
+  const studentContributionAnnualPerEftsl = computeTuitionAnnual(
+    qual,
+    field,
+    isCsp,
+    studyMode,
+    options?.annualStudentContributionOverride,
+  );
   const baseFtDuration = ANNUAL_TUITION_BY_FIELD[field].defaultDurationYears;
-  const tuitionTotal =
+  const courseEftsl =
     studyMode === 'none'
       ? 0
       : studyMode === 'part_time'
-        ? Math.round(tuitionPerYearFullLoad * Math.min(effectiveDuration, baseFtDuration))
-        : Math.round(tuitionPerYearFullLoad * effectiveDuration);
+        ? Math.round(Math.min(effectiveDuration * 0.5, Math.max(baseFtDuration, effectiveDuration * 0.5)) * 100) / 100
+        : Math.round(effectiveDuration * 100) / 100;
+  const studentContributionTotal =
+    studyMode === 'none'
+      ? 0
+      : Math.round(studentContributionAnnualPerEftsl * courseEftsl);
+  const includeSsaf = options?.includeSsaf ?? true;
+  const ssafAnnual =
+    studyMode === 'part_time' ? SSAF_2026.partTimeAnnual : SSAF_2026.fullTimeAnnual;
+  const ssafTotal =
+    studyMode !== 'none' && includeSsaf ? Math.round(ssafAnnual * effectiveDuration) : 0;
+  const tuitionTotal = studentContributionTotal + ssafTotal;
+
+  const workFullTimeWithRaises =
+    studyMode === 'part_time' && Boolean(options?.partTimeWorkFullTime);
 
   const { annualStudyIncome } = computeStudyLivingIncome(
     profile,
     baselineNoStudy,
     studyMode,
     partTimeStudyIncome,
+    workFullTimeWithRaises,
   );
 
   const opportunityCostTotal =
-    studyMode === 'none'
+    studyMode === 'none' || workFullTimeWithRaises
       ? 0
       : Math.round(Math.max(0, baselineNoStudy - annualStudyIncome) * effectiveDuration);
 
@@ -269,6 +315,7 @@ function buildScenarioComparison(
     annualStudyIncome,
     tuitionTotal,
     expectedGradIncome,
+    workFullTimeWithRaises,
   );
 
   const breakEvenYears = computeBreakEvenYears(
@@ -300,6 +347,10 @@ function buildScenarioComparison(
       tenYearNetWealthDelta,
     },
     path,
+    studentContributionAnnualPerEftsl,
+    courseEftsl,
+    studentContributionTotal,
+    ssafTotal,
   };
 }
 
@@ -373,6 +424,10 @@ export function analyzeEducationRoi(
     noStudySim,
   );
 
+  const partTimeWorkFullTimeActive =
+    plan.studyMode === 'part_time' && Boolean(plan.partTimeWorkFullTime);
+  const includeSsaf = plan.includeSsaf ?? true;
+
   const cspPt = buildScenarioComparison(
     'csp-part-time',
     `${qualLabel} — CSP Part-Time (Work & Study)`,
@@ -385,9 +440,13 @@ export function analyzeEducationRoi(
     Math.round(defaultFtDuration * 2 * 10) / 10,
     plan.partTimeStudyIncome > 0 && profile.employmentStatus !== 'studying_austudy'
       ? plan.partTimeStudyIncome
-      : Math.round(baselineNoStudyIncome * 0.85),
+      : baselineNoStudyIncome,
     expectedPostStudyGrossIncome,
     noStudySim,
+    {
+      partTimeWorkFullTime: partTimeWorkFullTimeActive || profile.employmentStatus !== 'studying_austudy',
+      includeSsaf,
+    },
   );
 
   const fullFeeFt = buildScenarioComparison(
@@ -403,11 +462,19 @@ export function analyzeEducationRoi(
     plan.partTimeStudyIncome,
     expectedPostStudyGrossIncome,
     noStudySim,
+    { includeSsaf },
   );
 
   const selectedBuild =
     plan.studyMode === 'none'
-      ? { comparison: noStudyScenario, path: noStudySim }
+      ? {
+          comparison: noStudyScenario,
+          path: noStudySim,
+          studentContributionAnnualPerEftsl: 0,
+          courseEftsl: 0,
+          studentContributionTotal: 0,
+          ssafTotal: 0,
+        }
       : buildScenarioComparison(
           'selected',
           `${qualLabel} (${plan.isCsp ? 'CSP' : 'Full-Fee'}, ${
@@ -423,6 +490,11 @@ export function analyzeEducationRoi(
           plan.partTimeStudyIncome,
           expectedPostStudyGrossIncome,
           noStudySim,
+          {
+            partTimeWorkFullTime: partTimeWorkFullTimeActive,
+            annualStudentContributionOverride: plan.annualStudentContributionOverride,
+            includeSsaf,
+          },
         );
 
   const { austudyEligible, annualStudyIncome } = computeStudyLivingIncome(
@@ -430,15 +502,10 @@ export function analyzeEducationRoi(
     baselineNoStudyIncome,
     plan.studyMode,
     plan.partTimeStudyIncome,
+    partTimeWorkFullTimeActive,
   );
 
-  const effectiveDuration = plan.studyMode === 'none' ? 0 : Math.max(0, plan.durationYears || defaultFtDuration);
-  const tuitionAnnual = computeTuitionAnnual(
-    plan.targetQualification,
-    plan.field,
-    plan.isCsp,
-    plan.studyMode,
-  );
+  const tuitionAnnual = selectedBuild.studentContributionAnnualPerEftsl;
   const tuitionTotalAddedToHecs = selectedBuild.comparison.tuitionTotal;
   const foregoneIncomeDuringStudy = selectedBuild.comparison.opportunityCostTotal;
 
@@ -473,16 +540,22 @@ export function analyzeEducationRoi(
     );
   } else {
     notes.push(
-      `${plan.isCsp ? 'Commonwealth Supported Place (CSP)' : 'Full-Fee place'} adds ~$${tuitionTotalAddedToHecs.toLocaleString('en-AU')} to HECS-HELP over ${effectiveDuration} yrs (CSP saves $${cspVsFullFeeSavings.toLocaleString('en-AU')} vs Full-Fee).`,
+      `${plan.isCsp ? 'Commonwealth Supported Place (CSP)' : 'Full-Fee place'} adds $${selectedBuild.studentContributionTotal.toLocaleString('en-AU')} student contribution (${selectedBuild.courseEftsl.toFixed(1)} EFTSL × $${selectedBuild.studentContributionAnnualPerEftsl.toLocaleString('en-AU')}/yr)${selectedBuild.ssafTotal > 0 ? ` + $${selectedBuild.ssafTotal.toLocaleString('en-AU')} SSAF` : ''} = $${tuitionTotalAddedToHecs.toLocaleString('en-AU')} to HECS-HELP (CSP saves $${cspVsFullFeeSavings.toLocaleString('en-AU')} vs Full-Fee).`,
     );
-    if (austudyEligible) {
+    if (partTimeWorkFullTimeActive) {
+      notes.push(
+        `Working full-time during part-time study preserves 100% of your $${baselineNoStudyIncome.toLocaleString('en-AU')}/yr pay with normal ${profile.salaryGrowthPct}%/yr annual raises ($0 foregone salary).`,
+      );
+    } else if (austudyEligible) {
       notes.push(
         `Austudy eligible during full-time study (~$${AUSTUDY_CONSTANTS.annualBaselineSingleNoChildren.toLocaleString('en-AU')}/yr baseline single), offsetting part of the $${foregoneIncomeDuringStudy.toLocaleString('en-AU')} foregone salary.`,
       );
     }
     if (tenYearNetWealthDelta < 0) {
       notes.push(
-        `10-year net wealth delta is negative (-$${Math.abs(tenYearNetWealthDelta).toLocaleString('en-AU')}) because short-term opportunity cost outweighs the immediate $${(expectedPostStudyGrossIncome - baselineNoStudyIncome).toLocaleString('en-AU')}/yr uplift; consider part-time study or verifying senior-band progression.`,
+        partTimeWorkFullTimeActive
+          ? `10-year net wealth delta is negative (-$${Math.abs(tenYearNetWealthDelta).toLocaleString('en-AU')}) because the $${tuitionTotalAddedToHecs.toLocaleString('en-AU')} study debt outweighs the $${(expectedPostStudyGrossIncome - baselineNoStudyIncome).toLocaleString('en-AU')}/yr uplift over ${CHART_HORIZON_YEARS} years.`
+          : `10-year net wealth delta is negative (-$${Math.abs(tenYearNetWealthDelta).toLocaleString('en-AU')}) because short-term opportunity cost outweighs the immediate $${(expectedPostStudyGrossIncome - baselineNoStudyIncome).toLocaleString('en-AU')}/yr uplift; consider part-time study or verifying senior-band progression.`,
       );
     } else if (selectedBuild.comparison.breakEvenYears !== null) {
       notes.push(
@@ -496,6 +569,11 @@ export function analyzeEducationRoi(
     baselineNoStudyIncome,
     austudyEligibleDuringStudy: austudyEligible,
     annualStudyLivingIncome: annualStudyIncome,
+    partTimeWorkFullTimeActive,
+    studentContributionAnnualPerEftsl: selectedBuild.studentContributionAnnualPerEftsl,
+    courseEftsl: selectedBuild.courseEftsl,
+    studentContributionTotal: selectedBuild.studentContributionTotal,
+    ssafTotal: selectedBuild.ssafTotal,
     tuitionAnnual,
     tuitionTotalAddedToHecs,
     foregoneIncomeDuringStudy,

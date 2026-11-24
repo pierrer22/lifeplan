@@ -56,6 +56,39 @@ describe('Education ROI Engine', () => {
 
     expect(pt.foregoneIncomeDuringStudy).toBeLessThan(ft.foregoneIncomeDuringStudy);
   });
+
+  it('models partTimeWorkFullTime with $0 foregone pay, annual raises, and CSP/SSAF breakdown', () => {
+    const sydneyRenter = PRESET_PROFILES.find((p) => p.id === 'sydney-renter')!;
+    const ptFullPay = analyzeEducationRoi(sydneyRenter, {
+      targetQualification: 'masters',
+      field: 'tech_data',
+      isCsp: true,
+      studyMode: 'part_time',
+      durationYears: 4,
+      partTimeWorkFullTime: true,
+      annualStudentContributionOverride: 9537,
+      includeSsaf: true,
+    });
+    const ptReduced = analyzeEducationRoi(sydneyRenter, {
+      targetQualification: 'masters',
+      field: 'tech_data',
+      isCsp: true,
+      studyMode: 'part_time',
+      durationYears: 4,
+      partTimeWorkFullTime: false,
+      partTimeStudyIncome: 65000,
+    });
+
+    expect(ptFullPay.partTimeWorkFullTimeActive).toBe(true);
+    expect(ptFullPay.foregoneIncomeDuringStudy).toBe(0);
+    expect(ptFullPay.courseEftsl).toBe(2);
+    expect(ptFullPay.studentContributionTotal).toBe(19074);
+    expect(ptFullPay.ssafTotal).toBe(1120);
+    expect(ptFullPay.tuitionTotalAddedToHecs).toBe(20194);
+    expect(ptFullPay.tenYearNetWealthDelta).toBeGreaterThan(
+      ptReduced.tenYearNetWealthDelta,
+    );
+  });
 });
 
 describe('Career Pathway Engine', () => {

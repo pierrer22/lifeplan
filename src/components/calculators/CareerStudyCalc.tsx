@@ -10,8 +10,12 @@ import {
 } from 'recharts';
 import { ArrowRightLeft, Check, GraduationCap, RotateCcw } from 'lucide-react';
 import {
+  ANNUAL_TUITION_BY_FIELD,
+  CSP_STUDENT_CONTRIBUTION_BANDS_2026,
   INDUSTRY_FIELD_LABELS,
   QUALIFICATION_LABELS,
+  QUALIFICATION_TUITION_MULTIPLIER,
+  SSAF_2026,
   STATE_FHB_RULES,
   SUPER_CONSTANTS,
 } from '../../data/auConstants';
@@ -65,6 +69,14 @@ export const CareerStudyCalc: React.FC = () => {
   const [partTimeStudyIncome, setPartTimeStudyIncome] = useState(
     profile.studyPlan.partTimeStudyIncome
   );
+  const [partTimeWorkFullTime, setPartTimeWorkFullTime] = useState<boolean>(
+    profile.studyPlan.partTimeWorkFullTime ?? true
+  );
+  const [annualStudentContributionOverride, setAnnualStudentContributionOverride] =
+    useState<number | undefined>(profile.studyPlan.annualStudentContributionOverride);
+  const [includeSsaf, setIncludeSsaf] = useState<boolean>(
+    profile.studyPlan.includeSsaf ?? true
+  );
 
   useEffect(() => {
     setTargetQualification(profile.studyPlan.targetQualification);
@@ -73,6 +85,11 @@ export const CareerStudyCalc: React.FC = () => {
     setStudyMode(profile.studyPlan.studyMode);
     setDurationYears(profile.studyPlan.durationYears);
     setPartTimeStudyIncome(profile.studyPlan.partTimeStudyIncome);
+    setPartTimeWorkFullTime(profile.studyPlan.partTimeWorkFullTime ?? true);
+    setAnnualStudentContributionOverride(
+      profile.studyPlan.annualStudentContributionOverride
+    );
+    setIncludeSsaf(profile.studyPlan.includeSsaf ?? true);
   }, [
     profile.id,
     profile.studyPlan.targetQualification,
@@ -81,7 +98,19 @@ export const CareerStudyCalc: React.FC = () => {
     profile.studyPlan.studyMode,
     profile.studyPlan.durationYears,
     profile.studyPlan.partTimeStudyIncome,
+    profile.studyPlan.partTimeWorkFullTime,
+    profile.studyPlan.annualStudentContributionOverride,
+    profile.studyPlan.includeSsaf,
   ]);
+
+  const defaultStudentContributionPerEftsl = useMemo(() => {
+    const band = ANNUAL_TUITION_BY_FIELD[field];
+    const mult = QUALIFICATION_TUITION_MULTIPLIER[targetQualification];
+    return Math.round((isCsp ? band.cspAnnual : band.fullFeeAnnual) * mult);
+  }, [field, targetQualification, isCsp]);
+
+  const displayedStudentContributionPerEftsl =
+    annualStudentContributionOverride ?? defaultStudentContributionPerEftsl;
 
   const eduSummary = useMemo(
     () =>
@@ -92,6 +121,9 @@ export const CareerStudyCalc: React.FC = () => {
         studyMode,
         durationYears,
         partTimeStudyIncome,
+        partTimeWorkFullTime,
+        annualStudentContributionOverride,
+        includeSsaf,
       }),
     [
       profile,
@@ -101,6 +133,9 @@ export const CareerStudyCalc: React.FC = () => {
       studyMode,
       durationYears,
       partTimeStudyIncome,
+      partTimeWorkFullTime,
+      annualStudentContributionOverride,
+      includeSsaf,
     ]
   );
 
@@ -121,6 +156,9 @@ export const CareerStudyCalc: React.FC = () => {
         studyMode,
         durationYears,
         partTimeStudyIncome,
+        partTimeWorkFullTime,
+        annualStudentContributionOverride,
+        includeSsaf,
       },
     }),
     [
@@ -131,6 +169,9 @@ export const CareerStudyCalc: React.FC = () => {
       studyMode,
       durationYears,
       partTimeStudyIncome,
+      partTimeWorkFullTime,
+      annualStudentContributionOverride,
+      includeSsaf,
     ]
   );
 
@@ -160,7 +201,11 @@ export const CareerStudyCalc: React.FC = () => {
     isCsp !== profile.studyPlan.isCsp ||
     studyMode !== profile.studyPlan.studyMode ||
     durationYears !== profile.studyPlan.durationYears ||
-    partTimeStudyIncome !== profile.studyPlan.partTimeStudyIncome;
+    partTimeStudyIncome !== profile.studyPlan.partTimeStudyIncome ||
+    partTimeWorkFullTime !== (profile.studyPlan.partTimeWorkFullTime ?? true) ||
+    annualStudentContributionOverride !==
+      profile.studyPlan.annualStudentContributionOverride ||
+    includeSsaf !== (profile.studyPlan.includeSsaf ?? true);
 
   const handleApply = () => {
     patchProfile({
@@ -172,6 +217,9 @@ export const CareerStudyCalc: React.FC = () => {
         studyMode,
         durationYears,
         partTimeStudyIncome,
+        partTimeWorkFullTime,
+        annualStudentContributionOverride,
+        includeSsaf,
       },
     });
   };
@@ -183,6 +231,11 @@ export const CareerStudyCalc: React.FC = () => {
     setStudyMode(profile.studyPlan.studyMode);
     setDurationYears(profile.studyPlan.durationYears);
     setPartTimeStudyIncome(profile.studyPlan.partTimeStudyIncome);
+    setPartTimeWorkFullTime(profile.studyPlan.partTimeWorkFullTime ?? true);
+    setAnnualStudentContributionOverride(
+      profile.studyPlan.annualStudentContributionOverride
+    );
+    setIncludeSsaf(profile.studyPlan.includeSsaf ?? true);
   };
 
   const cityCmp = careerSummary.cityComparison;
@@ -275,9 +328,10 @@ export const CareerStudyCalc: React.FC = () => {
                 <select
                   id="target-qual"
                   value={targetQualification}
-                  onChange={(e) =>
-                    setTargetQualification(e.target.value as QualificationLevel)
-                  }
+                  onChange={(e) => {
+                    setTargetQualification(e.target.value as QualificationLevel);
+                    setAnnualStudentContributionOverride(undefined);
+                  }}
                   className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                 >
                   {QUALIFICATIONS.map((q) => (
@@ -298,7 +352,10 @@ export const CareerStudyCalc: React.FC = () => {
                 <select
                   id="target-field"
                   value={field}
-                  onChange={(e) => setField(e.target.value as IndustryField)}
+                  onChange={(e) => {
+                    setField(e.target.value as IndustryField);
+                    setAnnualStudentContributionOverride(undefined);
+                  }}
                   className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                 >
                   {FIELDS.map((f) => (
@@ -312,7 +369,10 @@ export const CareerStudyCalc: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsCsp(true)}
+                  onClick={() => {
+                    setIsCsp(true);
+                    setAnnualStudentContributionOverride(undefined);
+                  }}
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition ${
                     isCsp
                       ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-300'
@@ -326,7 +386,10 @@ export const CareerStudyCalc: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsCsp(false)}
+                  onClick={() => {
+                    setIsCsp(false);
+                    setAnnualStudentContributionOverride(undefined);
+                  }}
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition ${
                     !isCsp
                       ? 'border-amber-600 bg-amber-50 text-amber-900 dark:border-amber-500 dark:bg-amber-950/50 dark:text-amber-300'
@@ -355,7 +418,16 @@ export const CareerStudyCalc: React.FC = () => {
                     <button
                       key={mode.value}
                       type="button"
-                      onClick={() => setStudyMode(mode.value)}
+                      onClick={() => {
+                        setStudyMode(mode.value);
+                        if (mode.value !== 'none' && durationYears <= 0) {
+                          setDurationYears(
+                            mode.value === 'part_time'
+                              ? ANNUAL_TUITION_BY_FIELD[field].defaultDurationYears * 2
+                              : ANNUAL_TUITION_BY_FIELD[field].defaultDurationYears
+                          );
+                        }
+                      }}
                       className={`rounded-lg border px-2 py-2 text-xs font-semibold transition ${
                         studyMode === mode.value
                           ? 'border-blue-600 bg-blue-600 text-white'
@@ -370,38 +442,145 @@ export const CareerStudyCalc: React.FC = () => {
 
               {studyMode !== 'none' ? (
                 <>
+                  {studyMode === 'part_time' ? (
+                    <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                            Work Full-Time During Study
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            100% full-time pay + normal annual raises
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={partTimeWorkFullTime}
+                          aria-label="Work Full-Time During Study"
+                          onClick={() => setPartTimeWorkFullTime((v) => !v)}
+                          className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                            partTimeWorkFullTime
+                              ? 'bg-emerald-600 text-white'
+                              : 'border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {partTimeWorkFullTime ? 'Full-Time Pay' : 'Reduced Pay'}
+                        </button>
+                      </div>
+                      {partTimeWorkFullTime ? (
+                        <div className="rounded-lg border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/40 px-2.5 py-1.5 text-[11px] text-emerald-800 dark:text-emerald-300 tabular-nums">
+                          Keeping {formatAUD(eduSummary.baselineNoStudyIncome)}/yr +{' '}
+                          {profile.salaryGrowthPct}%/yr raises ($0 foregone salary)
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <SliderField
                     label="Study Duration"
                     value={durationYears}
                     onChange={setDurationYears}
                     min={0.5}
-                    max={4}
+                    max={6}
                     step={0.5}
                     formatValue={(v) => `${v} yr${v > 1 ? 's' : ''}`}
                   />
-                  <CurrencyInput
-                    label="Income During Study"
-                    value={partTimeStudyIncome}
-                    onChange={setPartTimeStudyIncome}
-                    min={0}
-                    max={150000}
-                    step={1000}
-                    suffix="/yr"
-                    hint={
-                      eduSummary.austudyEligibleDuringStudy
-                        ? 'Austudy eligible'
-                        : 'Part-time / Austudy'
-                    }
-                  />
+
+                  {studyMode !== 'part_time' || !partTimeWorkFullTime ? (
+                    <CurrencyInput
+                      label="Income During Study"
+                      value={partTimeStudyIncome}
+                      onChange={setPartTimeStudyIncome}
+                      min={0}
+                      max={150000}
+                      step={1000}
+                      suffix="/yr"
+                      hint={
+                        eduSummary.austudyEligibleDuringStudy
+                          ? 'Austudy eligible'
+                          : 'Part-time / Austudy'
+                      }
+                    />
+                  ) : null}
+
+                  <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 p-3">
+                    <CurrencyInput
+                      label="Student Contribution (per EFTSL)"
+                      value={displayedStudentContributionPerEftsl}
+                      onChange={(val) => setAnnualStudentContributionOverride(val)}
+                      min={0}
+                      max={65000}
+                      step={100}
+                      suffix="/yr"
+                      hint={isCsp ? '2026 CSP band' : 'Full-Fee'}
+                    />
+                    {isCsp ? (
+                      <div className="grid grid-cols-4 gap-1">
+                        {CSP_STUDENT_CONTRIBUTION_BANDS_2026.map((b) => {
+                          const active =
+                            displayedStudentContributionPerEftsl === b.annualPerEftsl;
+                          return (
+                            <button
+                              key={b.band}
+                              type="button"
+                              title={b.label}
+                              onClick={() =>
+                                setAnnualStudentContributionOverride(b.annualPerEftsl)
+                              }
+                              className={`rounded-md border px-1.5 py-1 text-[11px] font-semibold tabular-nums transition ${
+                                active
+                                  ? 'border-blue-600 bg-blue-600 text-white'
+                                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              B{b.band} {formatAUD(b.annualPerEftsl)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                    <label className="flex cursor-pointer items-center justify-between pt-1 text-xs text-slate-700 dark:text-slate-300">
+                      <span>
+                        Include 2026 SSAF (
+                        {formatAUD(
+                          studyMode === 'part_time'
+                            ? SSAF_2026.partTimeAnnual
+                            : SSAF_2026.fullTimeAnnual
+                        )}
+                        /yr)
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={includeSsaf}
+                        onChange={(e) => setIncludeSsaf(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
                 </>
               ) : null}
 
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-slate-600 dark:text-slate-300">
                 <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100">
                   <GraduationCap className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  Study Cashflow Summary
+                  Study Cost &amp; Cashflow Summary
                 </div>
                 <div className="mt-2 space-y-1 tabular-nums">
+                  <div className="flex justify-between">
+                    <span>
+                      Student Contribution ({eduSummary.courseEftsl.toFixed(1)} EFTSL)
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {formatAUD(eduSummary.studentContributionTotal)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>SSAF (SA-HELP)</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {formatAUD(eduSummary.ssafTotal)}
+                    </span>
+                  </div>
                   <div className="flex justify-between">
                     <span>Foregone Income</span>
                     <span className="font-medium text-slate-900 dark:text-slate-100">
@@ -412,6 +591,7 @@ export const CareerStudyCalc: React.FC = () => {
                     <span>Annual Study Income</span>
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       {formatAUD(eduSummary.annualStudyLivingIncome)}/yr
+                      {eduSummary.partTimeWorkFullTimeActive ? ' (+ raises)' : ''}
                     </span>
                   </div>
                 </div>

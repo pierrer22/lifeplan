@@ -44,6 +44,9 @@ export interface StudyPlan {
   durationYears: number;
   partTimeStudyIncome: number;
   expectedGradIncomeOverride?: number;
+  partTimeWorkFullTime?: boolean;
+  annualStudentContributionOverride?: number;
+  includeSsaf?: boolean;
 }
 
 export interface NovatedLeaseInput {
@@ -444,6 +447,11 @@ export interface EducationRoiSummary {
   baselineNoStudyIncome: number;
   austudyEligibleDuringStudy: boolean;
   annualStudyLivingIncome: number;
+  partTimeWorkFullTimeActive: boolean;
+  studentContributionAnnualPerEftsl: number;
+  courseEftsl: number;
+  studentContributionTotal: number;
+  ssafTotal: number;
   tuitionAnnual: number;
   tuitionTotalAddedToHecs: number;
   foregoneIncomeDuringStudy: number;

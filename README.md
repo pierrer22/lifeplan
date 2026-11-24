@@ -39,7 +39,7 @@ LifePlanner is an interactive React + TypeScript financial, housing, superannuat
   - Caps vehicle GST credit at **$69,674** ($6,334 max credit) + GST-free running costs.
   - Computes **RFBA** (`baseValue × 0.20 × 1.8868`) even for FBT-exempt EVs and calculates the exact knock-on extra HECS-HELP and Medicare Levy Surcharge costs, plus the **1 April 2027 $75,000 EV FBT transition** notice.
 - **Career & Study ROI** (`CareerStudyCalc`):
-  - Compares **CSP vs Full-Fee** tuition and **Full-Time / Part-Time / None** study modes across qualifications and Australian industry fields (including Austudy baseline modelling).
+  - Compares **CSP vs Full-Fee** tuition using **2026 CSP Student Contribution Bands 1–4 + SSAF** and **Full-Time / Part-Time / None** study modes across qualifications and Australian industry fields (including Austudy baseline modelling and a **Work Full-Time During Part-Time Study** toggle preserving 100% pay + annual raises).
   - Charts 10-year cumulative earnings, break-even years, Australian salary progression bands vs goal-required income, and a **Sydney vs Canberra** relocation disposable-income comparison.
 - **Profile Persistence, Presets & Dark Mode** (`ProfileSidebar`, `PlannerContext`):
   - 4 pre-built Australian profiles (`sydney-renter`, `postgrad-student`, `mid-career-ev`, `public-sector-couple`), `localStorage` persistence, and JSON profile export/import.
