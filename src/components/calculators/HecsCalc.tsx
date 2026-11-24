@@ -689,7 +689,11 @@ export const HecsCalc: React.FC = () => {
 
         <div className="space-y-6 lg:col-span-8">
           <SectionCard
-            title="Payoff Trajectory: Minimum vs Voluntary Extra"
+            title={
+              voluntaryExtraAnnual > 0
+                ? 'Payoff Trajectory: Minimum vs Voluntary Extra'
+                : 'Payoff Trajectory: Minimum Compulsory Only'
+            }
             subtitle={
               summary.totalNewStudyDebtAdded > 0
                 ? 'Includes future study debt additions, 1 June indexation & compulsory repayments'
@@ -732,15 +736,17 @@ export const HecsCalc: React.FC = () => {
                     fillOpacity={isDark ? 0.18 : 0.1}
                     strokeWidth={2}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="closingBalance"
-                    name="With Voluntary Extra"
-                    stroke="#059669"
-                    fill="#059669"
-                    fillOpacity={isDark ? 0.24 : 0.16}
-                    strokeWidth={2.5}
-                  />
+                  {voluntaryExtraAnnual > 0 ? (
+                    <Area
+                      type="monotone"
+                      dataKey="closingBalance"
+                      name="With Voluntary Extra"
+                      stroke="#059669"
+                      fill="#059669"
+                      fillOpacity={isDark ? 0.24 : 0.16}
+                      strokeWidth={2.5}
+                    />
+                  ) : null}
                   {summary.totalNewStudyDebtAdded > 0 ? (
                     <Bar
                       dataKey="newDebtAdded"
