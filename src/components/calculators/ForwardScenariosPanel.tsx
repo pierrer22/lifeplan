@@ -233,16 +233,16 @@ export const ForwardScenariosPanel: React.FC<ForwardScenariosPanelProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[660px] text-left text-xs">
+          <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase">
-                <th className="py-2 pr-2 font-semibold">1-Year Block</th>
-                <th className="px-2 py-2 text-right font-semibold">Gross Salary</th>
-                <th className="px-2 py-2 text-right font-semibold">HECS Bal</th>
-                <th className="px-2 py-2 text-right font-semibold">Deposit</th>
-                <th className="px-2 py-2 text-right font-semibold">Max Borrowing</th>
-                <th className="px-2 py-2 text-right font-semibold">DTI</th>
-                <th className="pl-2 py-2 text-right font-semibold">Verdict</th>
+                <th className="py-2 pr-1.5 font-semibold">Block</th>
+                <th className="px-1.5 py-2 text-right font-semibold">Salary</th>
+                <th className="px-1.5 py-2 text-right font-semibold">HECS</th>
+                <th className="hidden sm:table-cell px-1.5 py-2 text-right font-semibold">Deposit</th>
+                <th className="px-1.5 py-2 text-right font-semibold">Max Borrow</th>
+                <th className="px-1.5 py-2 text-right font-semibold">DTI</th>
+                <th className="pl-1.5 py-2 text-right font-semibold">Verdict</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
@@ -255,35 +255,38 @@ export const ForwardScenariosPanel: React.FC<ForwardScenariosPanelProps> = ({
                       : ''
                   }
                 >
-                  <td className="py-2.5 pr-2 text-slate-900 dark:text-slate-100">
+                  <td className="py-2 pr-1.5 whitespace-nowrap text-slate-900 dark:text-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <span>{b.label}</span>
+                      <span>{b.year === 0 ? 'Now' : `Yr ${b.year}`}</span>
                       {b.mastersJustCompleted ? (
                         <Badge tone="accent">Masters</Badge>
                       ) : null}
                     </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {b.calendarYear}
+                    </div>
                   </td>
-                  <td className="px-2 py-2.5 text-right text-slate-900 dark:text-slate-100">
+                  <td className="px-1.5 py-2 text-right whitespace-nowrap text-slate-900 dark:text-slate-100">
                     {formatAUD(b.grossSalary)}
                   </td>
-                  <td className="px-2 py-2.5 text-right text-amber-700 dark:text-amber-400">
+                  <td className="px-1.5 py-2 text-right whitespace-nowrap text-amber-700 dark:text-amber-400">
                     {formatAUD(b.hecsBalance)}
                   </td>
-                  <td className="px-2 py-2.5 text-right text-slate-600 dark:text-slate-400">
+                  <td className="hidden sm:table-cell px-1.5 py-2 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
                     {formatAUD(b.projectedLiquidDeposit)}
                   </td>
-                  <td className="px-2 py-2.5 text-right font-semibold text-slate-900 dark:text-slate-100">
-                    {formatAUD(b.maxBorrowingPower)}
+                  <td className="px-1.5 py-2 text-right whitespace-nowrap font-semibold text-slate-900 dark:text-slate-100">
+                    <div>{formatAUD(b.maxBorrowingPower)}</div>
                     {b.borrowingDeltaVsNow > 0 ? (
-                      <span className="ml-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                        (+{formatAUD(b.borrowingDeltaVsNow)})
-                      </span>
+                      <div className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                        +{formatAUD(b.borrowingDeltaVsNow)}
+                      </div>
                     ) : null}
                   </td>
-                  <td className="px-2 py-2.5 text-right text-slate-600 dark:text-slate-400">
+                  <td className="px-1.5 py-2 text-right whitespace-nowrap text-slate-600 dark:text-slate-400">
                     {b.dtiRatio.toFixed(1)}x
                   </td>
-                  <td className="pl-2 py-2.5 text-right">
+                  <td className="pl-1.5 py-2 text-right whitespace-nowrap">
                     <Badge
                       tone={
                         b.verdict === 'Likely Approved'
