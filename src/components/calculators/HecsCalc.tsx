@@ -1,21 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Area,
-  AreaChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { Check, RotateCcw } from 'lucide-react';
+import { Check, GraduationCap, RotateCcw } from 'lucide-react';
 import {
+  ANNUAL_TUITION_BY_FIELD,
+  CSP_STUDENT_CONTRIBUTION_BANDS_2026,
   HECS_DEFAULT_INDEXATION_PCT,
   HECS_THRESHOLDS,
+  SSAF_2026,
 } from '../../data/auConstants';
 import { simulateHecsPayoff } from '../../engine';
 import { usePlanner } from '../../context/PlannerContext';
+import type { HecsFutureStudyInput, PlannerProfile } from '../../types/planner';
 import {
   AlertBanner,
   Badge,
@@ -28,8 +33,55 @@ import {
   formatPercent,
 } from '../SharedPrimitives';
 
+function buildDefaultFutureStudy(profile: PlannerProfile): HecsFutureStudyInput {
+  if (profile.hecsFutureStudy) {
+    return { ...profile.hecsFutureStudy };
+  }
+  const unitsPerTerm = 1;
+  const termsPerYear: 2 | 3 = 3;
+  const unitsPerEftsl = 8;
+  const isPartTimeLoad = unitsPerTerm * termsPerYear < unitsPerEftsl * 0.75;
+  return {
+    enabled: profile.studyPlan.studyMode !== 'none',
+    unitsPerTerm,
+    termsPerYear,
+    totalUnitsRemaining: 12,
+    unitsPerEftsl,
+    annualFeePerEftsl:
+      profile.studyPlan.annualStudentContributionOverride ??
+      (profile.studyPlan.isCsp
+        ? ANNUAL_TUITION_BY_FIELD[profile.studyPlan.field].cspAnnual
+        : ANNUAL_TUITION_BY_FIELD[profile.studyPlan.field].fullFeeAnnual),
+    includeSsaf: profile.studyPlan.includeSsaf ?? true,
+    ssafAnnualAmount: isPartTimeLoad
+      ? SSAF_2026.partTimeAnnual
+      : SSAF_2026.fullTimeAnnual,
+  };
+}
+
+function futureStudyEqual(
+  a: HecsFutureStudyInput,
+  b: HecsFutureStudyInput,
+): boolean {
+  return (
+    a.enabled === b.enabled &&
+    a.unitsPerTerm === b.unitsPerTerm &&
+    a.termsPerYear === b.termsPerYear &&
+    a.totalUnitsRemaining === b.totalUnitsRemaining &&
+    a.unitsPerEftsl === b.unitsPerEftsl &&
+    a.annualFeePerEftsl === b.annualFeePerEftsl &&
+    a.includeSsaf === b.includeSsaf &&
+    a.ssafAnnualAmount === b.ssafAnnualAmount
+  );
+}
+
 export const HecsCalc: React.FC = () => {
   const { profile, patchProfile, lifePlan, isDark } = usePlanner();
+
+  const syncedFutureStudy = useMemo(
+    () => buildDefaultFutureStudy(profile),
+    [profile],
+  );
 
   const [balance, setBalance] = useState(profile.hecsBalance);
   const [grossSalary, setGrossSalary] = useState(profile.grossSalary);
@@ -44,6 +96,8 @@ export const HecsCalc: React.FC = () => {
   const [rfbaAddBack, setRfbaAddBack] = useState(
     lifePlan.novatedLease.rfbaAmount
   );
+  const [futureStudy, setFutureStudy] =
+    useState<HecsFutureStudyInput>(syncedFutureStudy);
 
   useEffect(() => {
     setBalance(profile.hecsBalance);
@@ -52,6 +106,7 @@ export const HecsCalc: React.FC = () => {
     setVoluntaryExtraAnnual(profile.hecsVoluntaryExtraAnnual);
     setRescAddBack(profile.salarySacrificeAnnual);
     setRfbaAddBack(lifePlan.novatedLease.rfbaAmount);
+    setFutureStudy(syncedFutureStudy);
   }, [
     profile.id,
     profile.hecsBalance,
@@ -60,7 +115,31 @@ export const HecsCalc: React.FC = () => {
     profile.hecsVoluntaryExtraAnnual,
     profile.salarySacrificeAnnual,
     lifePlan.novatedLease.rfbaAmount,
+    syncedFutureStudy,
   ]);
+
+  const updateFutureStudy = (patch: Partial<HecsFutureStudyInput>) => {
+    setFutureStudy((prev) => {
+      const next: HecsFutureStudyInput = { ...prev, ...patch };
+      if (
+        patch.unitsPerTerm !== undefined ||
+        patch.termsPerYear !== undefined ||
+        patch.unitsPerEftsl !== undefined
+      ) {
+        const isPartTimeLoad =
+          next.unitsPerTerm * next.termsPerYear < next.unitsPerEftsl * 0.75;
+        if (
+          prev.ssafAnnualAmount === SSAF_2026.partTimeAnnual ||
+          prev.ssafAnnualAmount === SSAF_2026.fullTimeAnnual
+        ) {
+          next.ssafAnnualAmount = isPartTimeLoad
+            ? SSAF_2026.partTimeAnnual
+            : SSAF_2026.fullTimeAnnual;
+        }
+      }
+      return next;
+    });
+  };
 
   const taxableSalary = Math.max(0, grossSalary - rescAddBack);
 
@@ -76,6 +155,7 @@ export const HecsCalc: React.FC = () => {
         reportableFringeBenefits: rfbaAddBack,
         reportableEmployerSuper: rescAddBack,
         maxYears: 25,
+        futureStudy,
       }),
     [
       profile.financialYear,
@@ -86,6 +166,7 @@ export const HecsCalc: React.FC = () => {
       voluntaryExtraAnnual,
       rfbaAddBack,
       rescAddBack,
+      futureStudy,
     ]
   );
 
@@ -129,7 +210,8 @@ export const HecsCalc: React.FC = () => {
     balance !== profile.hecsBalance ||
     grossSalary !== profile.grossSalary ||
     salaryGrowthPct !== profile.salaryGrowthPct ||
-    voluntaryExtraAnnual !== profile.hecsVoluntaryExtraAnnual;
+    voluntaryExtraAnnual !== profile.hecsVoluntaryExtraAnnual ||
+    !futureStudyEqual(futureStudy, syncedFutureStudy);
 
   const handleApply = () => {
     patchProfile({
@@ -137,6 +219,7 @@ export const HecsCalc: React.FC = () => {
       grossSalary,
       salaryGrowthPct,
       hecsVoluntaryExtraAnnual: voluntaryExtraAnnual,
+      hecsFutureStudy: futureStudy,
     });
   };
 
@@ -148,7 +231,17 @@ export const HecsCalc: React.FC = () => {
     setVoluntaryExtraAnnual(profile.hecsVoluntaryExtraAnnual);
     setRescAddBack(profile.salarySacrificeAnnual);
     setRfbaAddBack(lifePlan.novatedLease.rfbaAmount);
+    setFutureStudy(syncedFutureStudy);
   };
+
+  const unitsPerYearPreview = futureStudy.unitsPerTerm * futureStudy.termsPerYear;
+  const eftslPerYearPreview = unitsPerYearPreview / Math.max(1, futureStudy.unitsPerEftsl);
+  const perUnitFeePreview =
+    futureStudy.annualFeePerEftsl / Math.max(1, futureStudy.unitsPerEftsl);
+  const annualStudyCostPreview =
+    unitsPerYearPreview * perUnitFeePreview +
+    (futureStudy.includeSsaf ? futureStudy.ssafAnnualAmount : 0);
+  const isPaidOffNow = balance <= 0 && summary.totalNewStudyDebtAdded <= 0;
 
   return (
     <div className="space-y-6">
@@ -162,7 +255,7 @@ export const HecsCalc: React.FC = () => {
         <StatCard
           label="Payoff Timeline"
           value={
-            balance <= 0
+            isPaidOffNow
               ? 'Paid Off'
               : summary.yearsToPayoff !== null
                 ? `${summary.yearsToPayoff} yrs`
@@ -174,17 +267,26 @@ export const HecsCalc: React.FC = () => {
               : `Baseline: ${summary.baselineYearsToPayoff ?? '25+'} yrs`
           }
           tone={
-            balance <= 0 || summary.yearsSavedWithExtra > 0
+            isPaidOffNow || summary.yearsSavedWithExtra > 0
               ? 'positive'
               : 'neutral'
           }
         />
-        <StatCard
-          label="Year 1 Indexation"
-          value={formatAUD(summary.yearOneIndexation)}
-          subtext={`At ${formatPercent(indexationRatePct, 1)} on 1 June`}
-          tone="warning"
-        />
+        {summary.totalNewStudyDebtAdded > 0 ? (
+          <StatCard
+            label="New Study Debt Added"
+            value={`+${formatAUD(summary.totalNewStudyDebtAdded)}`}
+            subtext={`Peak balance: ${formatAUD(summary.peakBalance)} (${summary.peakBalanceCalendarYear ?? '—'})`}
+            tone="warning"
+          />
+        ) : (
+          <StatCard
+            label="Year 1 Indexation"
+            value={formatAUD(summary.yearOneIndexation)}
+            subtext={`At ${formatPercent(indexationRatePct, 1)} on 1 June`}
+            tone="warning"
+          />
+        )}
         <StatCard
           label="Total Indexation Paid"
           value={formatAUD(summary.totalInterestIndexationPaid)}
@@ -198,7 +300,7 @@ export const HecsCalc: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+        <div className="space-y-6 lg:col-span-4">
           <SectionCard
             title="HECS-HELP Parameters"
             subtitle={`FY${profile.financialYear} ATO marginal repayment model`}
@@ -229,7 +331,7 @@ export const HecsCalc: React.FC = () => {
           >
             <div className="space-y-4">
               <CurrencyInput
-                label="HECS-HELP Balance"
+                label="Current HECS-HELP Balance"
                 value={balance}
                 onChange={setBalance}
                 min={0}
@@ -296,16 +398,230 @@ export const HecsCalc: React.FC = () => {
               </div>
             </div>
           </SectionCard>
+
+          <SectionCard
+            title="Future Study / Masters Debt"
+            subtitle="Unit-by-trimester HECS & SSAF accumulation"
+            action={
+              <button
+                type="button"
+                role="switch"
+                aria-checked={futureStudy.enabled}
+                onClick={() => updateFutureStudy({ enabled: !futureStudy.enabled })}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  futureStudy.enabled
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                }`}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                {futureStudy.enabled ? 'On' : 'Off'}
+              </button>
+            }
+          >
+            {!futureStudy.enabled ? (
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Toggle <strong>On</strong> to project ongoing Masters or degree
+                fees (e.g. 1 unit/trimester × 3/yr + SSAF) onto your HECS-HELP
+                trajectory.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Academic Calendar
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Trimesters (3/yr)', value: 3 as const },
+                      { label: 'Semesters (2/yr)', value: 2 as const },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          updateFutureStudy({ termsPerYear: opt.value })
+                        }
+                        className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          futureStudy.termsPerYear === opt.value
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-300'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2.5">
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                      Units / Term
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={4}
+                      step={1}
+                      value={futureStudy.unitsPerTerm}
+                      onChange={(e) =>
+                        updateFutureStudy({
+                          unitsPerTerm: Math.max(
+                            1,
+                            Math.min(4, Number(e.target.value) || 1),
+                          ),
+                        })
+                      }
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums focus:border-blue-500 focus:outline-none"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                      Total Units
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={32}
+                      step={1}
+                      value={futureStudy.totalUnitsRemaining}
+                      onChange={(e) =>
+                        updateFutureStudy({
+                          totalUnitsRemaining: Math.max(
+                            1,
+                            Math.min(32, Number(e.target.value) || 1),
+                          ),
+                        })
+                      }
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums focus:border-blue-500 focus:outline-none"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                      Units / EFTSL
+                    </span>
+                    <input
+                      type="number"
+                      min={4}
+                      max={12}
+                      step={1}
+                      value={futureStudy.unitsPerEftsl}
+                      onChange={(e) =>
+                        updateFutureStudy({
+                          unitsPerEftsl: Math.max(
+                            4,
+                            Math.min(12, Number(e.target.value) || 8),
+                          ),
+                        })
+                      }
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums focus:border-blue-500 focus:outline-none"
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
+                    2026 CSP Student Contribution Band
+                  </span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {CSP_STUDENT_CONTRIBUTION_BANDS_2026.map((b) => {
+                      const active =
+                        Math.abs(
+                          futureStudy.annualFeePerEftsl - b.annualPerEftsl,
+                        ) < 5;
+                      return (
+                        <button
+                          key={b.band}
+                          type="button"
+                          title={b.label}
+                          onClick={() =>
+                            updateFutureStudy({
+                              annualFeePerEftsl: b.annualPerEftsl,
+                            })
+                          }
+                          className={`rounded-lg border px-1.5 py-1.5 text-center text-[11px] font-medium transition-colors ${
+                            active
+                              ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-300'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          <div>B{b.band}</div>
+                          <div className="text-[10px] opacity-80">
+                            ${(b.annualPerEftsl / 1000).toFixed(1)}k
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <CurrencyInput
+                  label="Annual Fee (per 1.0 EFTSL)"
+                  value={futureStudy.annualFeePerEftsl}
+                  onChange={(v) =>
+                    updateFutureStudy({ annualFeePerEftsl: v })
+                  }
+                  min={0}
+                  max={70000}
+                  step={500}
+                />
+
+                <div className="space-y-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-3">
+                  <label className="flex cursor-pointer items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <span>Include SSAF (deferred to SA-HELP)</span>
+                    <input
+                      type="checkbox"
+                      checked={futureStudy.includeSsaf}
+                      onChange={(e) =>
+                        updateFutureStudy({ includeSsaf: e.target.checked })
+                      }
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </label>
+                  {futureStudy.includeSsaf ? (
+                    <CurrencyInput
+                      label="Annual SSAF"
+                      value={futureStudy.ssafAnnualAmount}
+                      onChange={(v) =>
+                        updateFutureStudy({ ssafAnnualAmount: v })
+                      }
+                      min={0}
+                      max={1000}
+                      step={10}
+                      suffix="/yr"
+                    />
+                  ) : null}
+                </div>
+
+                <div className="rounded-lg border border-amber-200 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 text-xs text-amber-900 dark:text-amber-200 tabular-nums">
+                  <div className="font-semibold">
+                    {unitsPerYearPreview} units/yr ({eftslPerYearPreview.toFixed(2)}{' '}
+                    EFTSL) · {summary.studyCompletionYears} yr(s)
+                  </div>
+                  <div className="mt-0.5 text-[11px] opacity-90">
+                    {formatAUD(perUnitFeePreview)}/unit · +
+                    {formatAUD(annualStudyCostPreview)}/yr · +
+                    {formatAUD(summary.totalNewStudyDebtAdded)} total added
+                  </div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
         </div>
 
         <div className="space-y-6 lg:col-span-8">
           <SectionCard
             title="Payoff Trajectory: Minimum vs Voluntary Extra"
-            subtitle="Projected year-end balance after 1 June indexation & compulsory repayments"
+            subtitle={
+              summary.totalNewStudyDebtAdded > 0
+                ? 'Includes future study debt additions, 1 June indexation & compulsory repayments'
+                : 'Projected year-end balance after 1 June indexation & compulsory repayments'
+            }
           >
             <div className="h-72 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
+                <ComposedChart
                   data={summary.projections}
                   margin={{ top: 10, right: 16, left: 4, bottom: 0 }}
                 >
@@ -348,7 +664,17 @@ export const HecsCalc: React.FC = () => {
                     fillOpacity={isDark ? 0.24 : 0.16}
                     strokeWidth={2.5}
                   />
-                </AreaChart>
+                  {summary.totalNewStudyDebtAdded > 0 ? (
+                    <Bar
+                      dataKey="newDebtAdded"
+                      name="New Study Debt (Tuition + SSAF)"
+                      fill="#F59E0B"
+                      fillOpacity={isDark ? 0.72 : 0.65}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={24}
+                    />
+                  ) : null}
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </SectionCard>
@@ -437,14 +763,70 @@ export const HecsCalc: React.FC = () => {
             </div>
           </div>
 
+          {summary.projections.length > 0 ? (
+            <SectionCard
+              title="Year-by-Year Debt & Study Additions Schedule"
+              subtitle="Same-year tuition & SSAF additions are exempt from 1 June indexation until aged 11+ months"
+            >
+              <div className="max-h-72 overflow-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="sticky top-0 bg-white dark:bg-slate-900">
+                    <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase">
+                      <th className="py-2 pr-2 font-semibold">Year</th>
+                      <th className="px-2 py-2 text-right font-semibold">Units</th>
+                      <th className="px-2 py-2 text-right font-semibold">New Debt</th>
+                      <th className="px-2 py-2 text-right font-semibold">Indexation</th>
+                      <th className="px-2 py-2 text-right font-semibold">Compulsory</th>
+                      <th className="px-2 py-2 text-right font-semibold">Extra</th>
+                      <th className="pl-2 py-2 text-right font-semibold">Closing</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
+                    {summary.projections.map((row) => (
+                      <tr key={row.calendarYear}>
+                        <td className="py-2 pr-2 font-medium text-slate-900 dark:text-slate-100">
+                          {row.calendarYear}
+                        </td>
+                        <td className="px-2 py-2 text-right text-slate-600 dark:text-slate-400">
+                          {row.unitsCompletedThisYear > 0 ? row.unitsCompletedThisYear : '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-amber-700 dark:text-amber-400 font-medium">
+                          {row.newDebtAdded > 0
+                            ? `+${formatAUD(row.newDebtAdded)}`
+                            : '$0'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-slate-600 dark:text-slate-400">
+                          {formatAUD(row.indexationAdded)}
+                        </td>
+                        <td className="px-2 py-2 text-right text-emerald-700 dark:text-emerald-400">
+                          -{formatAUD(row.compulsoryRepayment)}
+                        </td>
+                        <td className="px-2 py-2 text-right text-blue-700 dark:text-blue-400">
+                          {row.voluntaryExtra > 0
+                            ? `-${formatAUD(row.voluntaryExtra)}`
+                            : '$0'}
+                        </td>
+                        <td className="pl-2 py-2 text-right font-semibold text-slate-900 dark:text-slate-100">
+                          {formatAUD(row.closingBalance)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </SectionCard>
+          ) : null}
+
           <AlertBanner
             tone="info"
             title="1 June Indexation Timing Rule"
           >
             ATO applies HECS-HELP indexation on <strong>1 June</strong> each
-            year to unpaid debt aged 11+ months. Employer PAYG withheld
-            repayments are only credited after your tax return is lodged, so any
-            voluntary extra repayment aimed at beating 1 June indexation should
+            year only to unpaid debt aged <strong>11+ months</strong> — newly
+            incurred HECS-HELP tuition &amp; SA-HELP (SSAF) fees are exempt
+            from indexation in the calendar year they are added. Employer PAYG
+            withheld repayments are credited after your tax return is lodged, so
+            voluntary extra repayments aimed at beating 1 June indexation should
             be paid via BPAY in <strong>mid-May</strong>.
           </AlertBanner>
         </div>

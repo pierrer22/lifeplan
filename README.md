@@ -33,7 +33,7 @@ LifePlanner is an interactive React + TypeScript financial, housing, superannuat
   - Evaluates bracket-aware income tax savings vs 15% contributions tax, **Division 293** ($250,000 threshold), RESC knock-on impact on HECS/MLS Repayment Income, **FHSSS** ($15,000/yr, $50,000 lifetime, deemed SIC ~7.1%, marginal + 2% - 30% offset exit tax) vs HISA, and super balance projected to age 60.
 - **HECS-HELP Marginal Repayments** (`HecsCalc`):
   - Implements the **marginal HECS-HELP repayment brackets** for FY2026-27 and FY2025-26 on Repayment Income (taxable income + RFBA + reportable super + net investment losses).
-  - Projects multi-year payoff with 1 June indexation, comparing minimum compulsory repayments against voluntary extra repayments.
+  - Models **future Masters / study debt accumulation** (units per trimester/semester, 2026 CSP bands 1–4 or full-fee per EFTSL, SSAF via SA-HELP, and the ATO 11-month 1 June indexation exemption for same-year fees) with a year-by-year schedule and payoff trajectory comparing minimum compulsory repayments against voluntary extra repayments.
 - **Novated Lease (EV / RFBA)** (`NovatedLeaseCalc`):
   - Compares **EV FBT-exempt**, **ICE/Hybrid ECM (20% post-tax)**, **Cash**, and **Car Loan** over 1–5 year lease terms using ATO statutory residuals (`65.63%` at 1 yr down to `28.13%` at 5 yrs).
   - Caps vehicle GST credit at **$69,674** ($6,334 max credit) + GST-free running costs.

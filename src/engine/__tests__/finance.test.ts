@@ -165,6 +165,121 @@ describe('HECS-HELP Engine (src/engine/hecs.ts)', () => {
       baseline.totalInterestIndexationPaid,
     );
   });
+
+  it('accumulates future Masters study debt (1 unit/trimester x 3/yr + SSAF) without same-year indexation', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 20000,
+      grossSalary: 85000,
+      salaryGrowthPct: 3.5,
+      indexationRatePct: 3.2,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 12,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 9537,
+        includeSsaf: true,
+        ssafAnnualAmount: 280,
+      },
+    });
+
+    // 3 units/yr / 8 * $9,537 = $3,576.38/yr (rounded per year) x 4 yrs = $14,305.52; SSAF 4 x $280 = $1,120
+    expect(result.totalNewTuitionAdded).toBe(14305.52);
+    expect(result.totalNewSsafAdded).toBe(1120);
+    expect(result.totalNewStudyDebtAdded).toBe(15425.52);
+    expect(result.studyCompletionYears).toBe(4);
+    // ATO 11-month rule: Year 1 indexation applies only to $20,000 startingBalance ($640), not Year 1 new debt
+    expect(result.yearOneIndexation).toBe(640);
+    expect(result.projections[0].unitsCompletedThisYear).toBe(3);
+    expect(result.projections[0].ssafAddedThisYear).toBe(280);
+  });
+
+  it('simulates future Masters debt when starting HECS balance is $0', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 0,
+      grossSalary: 85000,
+      salaryGrowthPct: 3.5,
+      indexationRatePct: 3.2,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 12,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 9537,
+        includeSsaf: true,
+        ssafAnnualAmount: 280,
+      },
+    });
+
+    expect(result.projections.length).toBeGreaterThanOrEqual(4);
+    expect(result.totalNewStudyDebtAdded).toBe(15425.52);
+    expect(result.yearOneIndexation).toBe(0);
+    expect(result.peakBalance).toBeGreaterThan(0);
+    expect(result.yearsToPayoff).not.toBeNull();
+    expect(result.yearsToPayoff!).toBeGreaterThanOrEqual(4);
+  });
+
+  it('never marks paid off while future study units remain despite high salary and small initial balance', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 1000,
+      grossSalary: 140000,
+      salaryGrowthPct: 3.5,
+      indexationRatePct: 3.2,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 12,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 9537,
+        includeSsaf: true,
+        ssafAnnualAmount: 280,
+      },
+    });
+
+    expect(result.projections.length).toBeGreaterThanOrEqual(4);
+    expect(result.yearsToPayoff).toBe(4);
+    expect(result.baselineYearsToPayoff).toBe(4);
+  });
+
+  it('prorates partial final study year units and SSAF cleanly', () => {
+    const result = simulateHecsPayoff({
+      financialYear: '2026-27',
+      startingBalance: 5000,
+      grossSalary: 85000,
+      salaryGrowthPct: 3.0,
+      indexationRatePct: 3.0,
+      voluntaryExtraAnnual: 0,
+      futureStudy: {
+        enabled: true,
+        unitsPerTerm: 1,
+        termsPerYear: 3,
+        totalUnitsRemaining: 10,
+        unitsPerEftsl: 8,
+        annualFeePerEftsl: 8000,
+        includeSsaf: true,
+        ssafAnnualAmount: 280,
+      },
+    });
+
+    // Years 1-3: 3 units ($3,000) + $280 SSAF; Year 4: 1 unit ($1,000) + $93.33 SSAF; Year 5+: 0
+    expect(result.projections[0].unitsCompletedThisYear).toBe(3);
+    expect(result.projections[0].ssafAddedThisYear).toBe(280);
+    expect(result.projections[2].unitsCompletedThisYear).toBe(3);
+    expect(result.projections[3].unitsCompletedThisYear).toBe(1);
+    expect(result.projections[3].tuitionAddedThisYear).toBe(1000);
+    expect(result.projections[3].ssafAddedThisYear).toBe(93.33);
+    expect(result.projections[4].unitsCompletedThisYear).toBe(0);
+    expect(result.projections[4].newDebtAdded).toBe(0);
+  });
 });
 
 describe('Super & FHSSS Engine (src/engine/super.ts)', () => {

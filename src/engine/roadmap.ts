@@ -432,6 +432,7 @@ export function generateLifePlan(profile: PlannerProfile): LifePlanSummary {
     voluntaryExtraAnnual: profile.hecsVoluntaryExtraAnnual,
     reportableFringeBenefits: novatedLease.enabled ? novatedLease.rfbaAmount : 0,
     reportableEmployerSuper: profile.salarySacrificeAnnual,
+    futureStudy: profile.hecsFutureStudy,
   });
 
   const superSummary = calculateSuperAndFhsss({

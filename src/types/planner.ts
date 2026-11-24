@@ -84,6 +84,7 @@ export interface PlannerProfile {
   currentWeeklyRent: number;
   hecsBalance: number;
   hecsVoluntaryExtraAnnual: number;
+  hecsFutureStudy?: HecsFutureStudyInput;
   currentQualification: QualificationLevel;
   currentField: IndustryField;
   studyPlan: StudyPlan;
@@ -151,6 +152,17 @@ export interface TaxSummary {
 // HECS-HELP Engine Types
 // ============================================================================
 
+export interface HecsFutureStudyInput {
+  enabled: boolean;
+  unitsPerTerm: number;
+  termsPerYear: 2 | 3;
+  totalUnitsRemaining: number;
+  unitsPerEftsl: number;
+  annualFeePerEftsl: number;
+  includeSsaf: boolean;
+  ssafAnnualAmount: number;
+}
+
 export interface HecsSimulationInput {
   financialYear: FinancialYear;
   startingBalance: number;
@@ -161,6 +173,7 @@ export interface HecsSimulationInput {
   reportableFringeBenefits?: number;
   reportableEmployerSuper?: number;
   maxYears?: number;
+  futureStudy?: HecsFutureStudyInput;
 }
 
 export interface HecsProjectionYear {
@@ -169,6 +182,10 @@ export interface HecsProjectionYear {
   salary: number;
   repaymentIncome: number;
   openingBalance: number;
+  unitsCompletedThisYear: number;
+  tuitionAddedThisYear: number;
+  ssafAddedThisYear: number;
+  newDebtAdded: number;
   indexationAdded: number;
   compulsoryRepayment: number;
   voluntaryExtra: number;
@@ -188,6 +205,12 @@ export interface HecsSummary {
   totalInterestIndexationPaid: number;
   totalPaid: number;
   indexationSavedWithExtra: number;
+  totalNewStudyDebtAdded: number;
+  totalNewTuitionAdded: number;
+  totalNewSsafAdded: number;
+  peakBalance: number;
+  peakBalanceCalendarYear: number | null;
+  studyCompletionYears: number;
   projections: HecsProjectionYear[];
   notes: string[];
 }
