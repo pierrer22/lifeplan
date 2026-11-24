@@ -11,6 +11,7 @@ import {
   Moon,
   PiggyBank,
   RotateCcw,
+  ShieldCheck,
   Sun,
   Upload,
   Wallet,
@@ -31,6 +32,7 @@ interface NavTab {
 const TABS: NavTab[] = [
   { id: 'overview', label: 'Overview & Plan', Icon: LayoutDashboard },
   { id: 'housing', label: 'House Deposit', Icon: Home },
+  { id: 'mortgage', label: 'Loan Approval', Icon: ShieldCheck },
   { id: 'rent', label: 'Rent vs Save', Icon: Wallet },
   { id: 'super', label: 'Super & FHSSS', Icon: PiggyBank },
   { id: 'hecs', label: 'HECS-HELP', Icon: GraduationCap },

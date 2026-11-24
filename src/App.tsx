@@ -6,6 +6,7 @@ import {
   CareerStudyCalc,
   HecsCalc,
   HouseDepositCalc,
+  MortgageApprovalCalc,
   NovatedLeaseCalc,
   RentBudgetCalc,
   SuperFhsssCalc,
@@ -19,6 +20,8 @@ const ActiveTabView: React.FC = () => {
       return <OverviewDashboard />;
     case 'housing':
       return <HouseDepositCalc />;
+    case 'mortgage':
+      return <MortgageApprovalCalc />;
     case 'rent':
       return <RentBudgetCalc />;
     case 'super':

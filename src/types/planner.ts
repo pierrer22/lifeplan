@@ -26,6 +26,7 @@ export type DepositStrategy = '5_hgs' | '10_lmi' | '20_no_lmi';
 export type TabId =
   | 'overview'
   | 'housing'
+  | 'mortgage'
   | 'rent'
   | 'super'
   | 'hecs'
@@ -533,4 +534,91 @@ export interface LifePlanSummary {
   readiness: GoalReadiness;
   actionPlan: ActionStep[];
   netWorthProjection: NetWorthProjectionPoint[];
+}
+
+// ============================================================================
+// Mortgage Loan Approval Engine Types
+// ============================================================================
+
+export type CreditScoreBand = 'excellent' | 'very_good' | 'good' | 'fair';
+
+export interface MortgageApprovalInput {
+  financialYear: FinancialYear;
+  state: AuState;
+  cityLabel: string;
+  relationshipStatus: 'single' | 'couple';
+  dependents: number;
+  employmentStatus: EmploymentStatus;
+  grossSalary: number;
+  partnerGrossSalary: number;
+  bonusOrOtherIncomeAnnual: number;
+  hasPrivateHospitalCover: boolean;
+  hecsBalance: number;
+  monthlyLivingExpenses: number;
+  creditCardLimitsTotal: number;
+  existingMonthlyDebtRepayments: number;
+  novatedLeaseAnnualPreTax: number;
+  propertyPrice: number;
+  depositAmount: number;
+  isFirstHomeBuyer: boolean;
+  isNewHome: boolean;
+  interestRatePct: number;
+  apraBufferPct: number;
+  loanTermYears: number;
+  creditScoreBand: CreditScoreBand;
+}
+
+export interface UnderwritingGate {
+  id: 'serviceability' | 'lvr' | 'dti' | 'profile';
+  label: string;
+  status: 'pass' | 'borderline' | 'fail';
+  actualDisplay: string;
+  benchmarkDisplay: string;
+  detail: string;
+}
+
+export interface BorrowingImpactItem {
+  name: string;
+  amount: number;
+  color: string;
+}
+
+export interface RateStressPoint {
+  rateLabel: string;
+  ratePct: number;
+  monthlyRepayment: number;
+  monthlySurplus: number;
+  isAssessmentRate: boolean;
+}
+
+export interface MortgageApprovalSummary {
+  verdict: 'Likely Approved' | 'Conditional / Borderline' | 'Unlikely / Declined';
+  approvalScore: number;
+  requestedLoanAmount: number;
+  maxBorrowingPower: number;
+  borrowingSurplusOrShortfall: number;
+  lvrPct: number;
+  hgsEligible: boolean;
+  lmiEstimate: number;
+  stampDuty: number;
+  totalCashNeeded: number;
+  dtiRatio: number;
+  assessmentRatePct: number;
+  actualMonthlyRepayment: number;
+  stressedMonthlyRepayment: number;
+  assessedNetMonthlyIncome: number;
+  assessedLivingMonthly: number;
+  hemFloorMonthly: number;
+  creditCardMonthlyAssessment: number;
+  hecsMonthlyImpact: number;
+  totalMonthlyCommitments: number;
+  netMonthlySurplusAtStress: number;
+  borrowingPowerWithoutCards: number;
+  borrowingPowerWithoutHecs: number;
+  borrowingLostToCards: number;
+  borrowingLostToHecs: number;
+  gates: UnderwritingGate[];
+  borrowingBreakdown: BorrowingImpactItem[];
+  rateStressSeries: RateStressPoint[];
+  unlockActions: string[];
 }

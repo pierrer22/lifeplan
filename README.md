@@ -18,6 +18,10 @@ LifePlanner is an interactive React + TypeScript financial, housing, superannuat
   - Compares **5% HGS ($0 LMI)**, **10% + LMI**, and **20% ($0 LMI)** deposit strategies across all 8 Australian states and territories.
   - Models **2026 state stamp duty & First Home Buyer (FHB) concessions/grants** (including ACT HBCS $0 duty with no price cap from 1 July 2026, NSW FHBAS $0 up to $800k / tapered to $1M, VIC, QLD, WA, SA, TAS, NT) and regional/metro HGS price caps.
   - Includes **APRA +3% serviceability buffer** borrowing power with HECS debt impact, a **Required Gross Income solver**, and a deposit accumulation timeline incorporating FHSSS.
+- **Mortgage Loan Approval** (`MortgageApprovalCalc`):
+  - Models Australian bank underwriting across 4 gates: **APRA +3% serviceability buffer**, **LVR & HGS/LMI**, **Debt-to-Income (DTI)**, and **Employment & Credit Score**.
+  - Applies **HEM living expense floors** (single/couple + dependents), **3.8%/month credit card limit shading**, 80% bonus shading, and exact borrowing power lost to HECS-HELP and credit cards.
+  - Includes an **Interest Rate Stress Test** (`-0.5%` to `+3.0%`) and prioritized steps to strengthen loan approval.
 - **Rent vs Save Optimizer** (`RentBudgetCalc`):
   - Calculates monthly surplus, savings rate, and **30% housing stress** status against household net income.
   - Models a weekly rent sensitivity curve ($250–$950/wk), maximum sustainable rent to stay on schedule, and capital-city rent benchmarks (Sydney, Canberra, Melbourne, Brisbane, Perth, Adelaide).
@@ -79,6 +83,7 @@ lifeplan/
     │   ├── hecs.ts                  # Marginal HECS-HELP & multi-year payoff
     │   ├── super.ts                 # Concessional cap, carry-forward, FHSSS
     │   ├── housing.ts               # Stamp duty, FHB, deposit strategies, rent optimizer
+    │   ├── mortgageApproval.ts      # APRA +3% underwriting, HEM floor, DTI & card shading
     │   ├── novatedLease.ts          # EV/ICE lease, GST cap, RFBA HECS/MLS knock-on
     │   ├── education.ts             # CSP vs Full-Fee ROI & Austudy modelling
     │   ├── employment.ts            # Salary ladders & Sydney vs Canberra comparison
@@ -86,12 +91,12 @@ lifeplan/
     │   ├── index.ts                 # Barrel exports
     │   └── __tests__/               # Vitest unit & integration suites
     └── components/
-        ├── Layout.tsx               # Header, preset/JSON controls, 7-tab nav, footer
+        ├── Layout.tsx               # Header, preset/JSON controls, 8-tab nav, footer
         ├── ProfileSidebar.tsx       # 5-section accordion profile editor
         ├── OverviewDashboard.tsx    # Readiness score, KPIs, cashflow & net worth charts
         ├── ActionRoadmapView.tsx    # Filterable action steps with deep links
         ├── SharedPrimitives.tsx     # CurrencyInput, SliderField, StatCard, SectionCard
-        └── calculators/             # 6 interactive calculator views + barrel export
+        └── calculators/             # 7 interactive calculator views + barrel export
 ```
 
 ---
